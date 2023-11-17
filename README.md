@@ -1,6 +1,7 @@
 # CENG445-MapMakingGame
 
-CEng 445 Spring 2023 Projects Class Interface
+	CEng 445 Spring 2023 Projects Class Interface
+
 The following class descriptions may not be final or not the best way to implement the projects. 
 You can modify the arguments, add new methods as long as you can justify it.
 
@@ -60,7 +61,7 @@ Also you do not need to implement any persistency in this phase. All objects
 are lost when program stops.
 
 
-Map Making Game
+	Map Making Game
  
 In this project users play on a global Map object. System has a repository of
 maps and user joins to one of them, releasing the previously joined map. The
