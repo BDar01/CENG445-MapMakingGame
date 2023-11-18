@@ -28,37 +28,37 @@ class Player(Object):
                 if tpl[2].id == self.id:
                     objects_list[i] = (tpl[0] - 1, tpl[1], tpl[2])
 
-        if(direction == "NW"):
+        elif(direction == "NW"):
             for i, tpl in range(object_list_length):
                 if tpl[2].id == self.id:
                     objects_list[i] = (tpl[0] - 1, tpl[1] + 1, tpl[2])
         
-        if(direction == "N"):
+        elif(direction == "N"):
             for i, tpl in range(object_list_length):
                 if tpl[2].id == self.id:
                     objects_list[i] = (tpl[0], tpl[1] + 1, tpl[2])
 
-        if(direction == "NE"):
+        elif(direction == "NE"):
             for i, tpl in range(object_list_length):
                 if tpl[2].id == self.id:
                     objects_list[i] = (tpl[0] + 1, tpl[1] + 1, tpl[2])
 
-        if(direction == "E"):
+        elif(direction == "E"):
             for i, tpl in range(object_list_length):
                 if tpl[2].id == self.id:
                     objects_list[i] = (tpl[0] + 1, tpl[1], tpl[2])
 
-        if(direction == "SE"):
+        elif(direction == "SE"):
             for i, tpl in range(object_list_length):
                 if tpl[2].id == self.id:
                     objects_list[i] = (tpl[0] + 1, tpl[1] - 1, tpl[2])
 
-        if(direction == "S"):
+        elif(direction == "S"):
             for i, tpl in range(object_list_length):
                 if tpl[2].id == self.id:
                     objects_list[i] = (tpl[0], tpl[1] - 1, tpl[2])
 
-        if(direction == "SW"):
+        elif(direction == "SW"):
             for i, tpl in range(object_list_length):
                 if tpl[2].id == self.id:
                     objects_list[i] = (tpl[0] - 1, tpl[1] - 1, tpl[2])

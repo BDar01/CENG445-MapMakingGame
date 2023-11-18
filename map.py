@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 from object import *
 class Map:
     def __init__(self, name, size, config):
@@ -38,6 +37,3 @@ class Map:
         return
     
     
-=======
-#test
->>>>>>> ae17ddc66a36ff07448f50a3cd65035ffe909c6e
