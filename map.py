@@ -8,7 +8,7 @@ class Map:
 
     def addObject(self, name, type, x, y):
         object = Object(name, type)
-        self.objects.append((x,y,object))
+        self.objects_list.append((x,y,object))
     
     def removeObject(self, id):
         new_objects_list = [obj for obj in self.objects_list if obj.id != id]
