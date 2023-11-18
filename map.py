@@ -44,7 +44,7 @@ class Map:
     
     def query(self, x, y, r):
         new_objects_list = [obj for obj in self.objects_list if (r-x <= obj[0] <= r+x) and (r-y <= obj[0] <= r+y)]
-        return new_objects_list
+        return iter(new_objects_list)
     
     def join(player, team):
         return
