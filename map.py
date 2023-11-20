@@ -8,6 +8,7 @@ class Map:
         self.size = size
         self.config = config
         self.objects_list = config.objects
+        self.local_maps = []
 
         bg_img = cv.imread(config.image)
         if(bg_img and bg_img.shape[0] == size[1] and bg_img.shape[1] == size[0]):
@@ -28,6 +29,8 @@ class Map:
         return iter(output)
     
     def getimage(self, x, y, r):
+        if(not r):
+           r = self.config.playervision
         bg_image = np.zeros((2*r,2*r,3), np.uint8)
 
         for i in range(-r, r+1):
@@ -37,22 +40,35 @@ class Map:
         return bg_image
     
     def setimage(self, x, y, r, image):
+        if(not r):
+           r = self.config.playervision
         for i in range(-r, r+1):
             for j in range(-r, r+1):
                 for k in range(3):
                     self.background_image[i+x][j+y][k] = image[i+r][j+r][k]
     
     def query(self, x, y, r):
+        if(not r):
+           r = self.config.playervision
         new_objects_list = [obj for obj in self.objects_list if (r-x <= obj[0] <= r+x) and (r-y <= obj[0] <= r+y)]
         return iter(new_objects_list)
     
-    def join(player, team):
-        return
+    def join(self, player, team):
+        if (team in [obj[0] for obj in self.local_maps]):
+            tmap = [obj for obj in self.local_maps if obj[0] == team][1]
+        else:
+            tmap = Map(team, self.size)
+            self.local_maps.append((team, tmap))
 
-    def leave(player, team):
+        p = Player(player, team, self.config.playerh, self.config.playerrepo, tmap)
+        self.objects_list.append((0, 0, p))
+        return p
+
+    def leave(self, player, team):
+        id = [obj[2].id for obj in self.objects_list if obj[2].name == player][0]
+        self.removeObject(id)
         return
     
-    def teammap(team):
-        return
-    
-    
+    def teammap(self, team):
+        tmap = [obj for obj in self.local_maps if obj[0] == team]
+        return tmap[1]
