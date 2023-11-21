@@ -69,7 +69,7 @@ class Player(Object):
             if tpl[2].id == self.id:
                 x = tpl[0]
                 y = tpl[1]
-        self.map.bg_img.setimage(x, y, 0, Map.getimage(x,y))
+        self.map.bg_img.setimage(x, y, 0, Map.getimage(x,y,0)) # need global map
     
     def move(self, direction):
 
