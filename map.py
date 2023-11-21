@@ -1,6 +1,201 @@
-from object import *
 import cv2 as cv
 import numpy as np
+import time
+
+       ### OBJECT ###
+class Object:
+    id = -1
+
+    def __init__(self, name, type):
+        Object.id += 1
+
+        self.name = name
+        self.type = type
+        self.id = Object.id
+        
+
+        ###  PLAYER OBJECT ###
+
+class Player(Object):
+
+    def __init__(self, user, team, health, repo, map):
+        super().__init__(user, "Player")
+        self.username = user
+        self.team = team
+        self.health = health
+        self.repo = repo
+        self.map = map
+
+    def __str__(self):
+        output = "Player: [Username: '" + self.username +  "', Team: '" + self.team + "', Health: " + str(self.health) + "]"
+        return output
+
+    def updatePositionOfPlayer(self, direction):
+        objects_list = Map.objects_list # need global map
+        object_list_length = len(objects_list)
+
+        if(direction == "W"):
+            for i, tpl in range(object_list_length):
+                if tpl[2].id == self.id:
+                    objects_list[i] = (tpl[0] - 1, tpl[1], tpl[2])
+
+        elif(direction == "NW"):
+            for i, tpl in range(object_list_length):
+                if tpl[2].id == self.id:
+                    objects_list[i] = (tpl[0] - 1, tpl[1] + 1, tpl[2])
+        
+        elif(direction == "N"):
+            for i, tpl in range(object_list_length):
+                if tpl[2].id == self.id:
+                    objects_list[i] = (tpl[0], tpl[1] + 1, tpl[2])
+
+        elif(direction == "NE"):
+            for i, tpl in range(object_list_length):
+                if tpl[2].id == self.id:
+                    objects_list[i] = (tpl[0] + 1, tpl[1] + 1, tpl[2])
+
+        elif(direction == "E"):
+            for i, tpl in range(object_list_length):
+                if tpl[2].id == self.id:
+                    objects_list[i] = (tpl[0] + 1, tpl[1], tpl[2])
+
+        elif(direction == "SE"):
+            for i, tpl in range(object_list_length):
+                if tpl[2].id == self.id:
+                    objects_list[i] = (tpl[0] + 1, tpl[1] - 1, tpl[2])
+
+        elif(direction == "S"):
+            for i, tpl in range(object_list_length):
+                if tpl[2].id == self.id:
+                    objects_list[i] = (tpl[0], tpl[1] - 1, tpl[2])
+
+        elif(direction == "SW"):
+            for i, tpl in range(object_list_length):
+                if tpl[2].id == self.id:
+                    objects_list[i] = (tpl[0] - 1, tpl[1] - 1, tpl[2])
+
+    def updateBackgroundImage(self, direction):
+        for i, tpl in range(len(Map.objects_list)): # need global map
+            if tpl[2].id == self.id:
+                x = tpl[0]
+                y = tpl[1]
+        self.map.bg_img.setimage(x, y, 0, Map.getimage(x,y,0)) # need global map
+    
+    def move(self, direction):
+
+        self.updatePositionOfPlayer(direction)
+        self.updateBackgroundImage(direction)
+        # need to query
+        self.competition()
+
+        if (self.health <= 0):
+            self.map.leave(self.user.team)
+
+    def competition(self):
+        return
+
+    def stun(self, stun):
+        time.sleep(stun)
+
+    def drop(self, objecttype):
+
+        available_objects = [obj for obj in self.repo if obj[0] == objecttype]
+        
+        drop_obj = available_objects[0]
+        if(drop_obj):
+            for i, tpl in range(len(Map.objects_list)): # need global map
+                    if tpl[2].id == self.id:
+                        x = tpl[0]
+                        y = tpl[1]
+            if (drop_obj[0] == "Health"):
+                self.map.objects_list.append((x,y,Health(drop_obj[1],drop_obj[2],drop_obj[3])))
+            if (drop_obj[0] == "Mine"):
+                self.map.objects_list.append((x,y,Mine(drop_obj[1],drop_obj[2],drop_obj[3], drop_obj[4])))
+            if (drop_obj[0] == "Freezer"):
+                self.map.objects_list.append((x,y,Freezer(drop_obj[1],drop_obj[2],drop_obj[3], drop_obj[4])))
+
+        new_repo = [obj for obj in self.repo if obj.id != drop_obj.id]
+        self.repo = new_repo
+
+        ### MINE OBJECT ###
+
+class Mine(Object):
+    def __init__(self, name, p, d, k):
+        super().__init__(name, "Mine")
+        self.prox = p
+        self.dmg = d
+        self.itr = k
+
+    def __str__(self):
+        output = "Mine: " + "[Name: '" + self.name + "', Proximity: " + str(self.prox) + ", Damage: " + str(self.dmg) + ", Iteration: " + str(self.itr) + "]"
+        return output
+
+    def run(self):
+        time.sleep(0.1)
+        for i in range(self.itr):
+            for i, tpl in range(len(Map.objects_list)): # need global map
+                    if tpl[2].id == self.id:
+                        x = tpl[0]
+                        y = tpl[1]
+            for obj in Map.query(x, y, self.prox): # need global map
+                if(obj[2].type == "Player"):
+                    obj[2].health -= self.dmg
+
+        ### FREEZER OBJECT ###
+
+class Freezer(Object):
+    def __init__(self, name, p, d, k):
+        super().__init__(name, "Freezer")
+        self.prox = p
+        self.stun = d
+        self.itr = k
+
+    def __str__(self):
+        output = "Freezer: " + "[Name: '" + self.name + "', Proximity: " + str(self.prox) + ", Damage: " + str(self.stun) + ", Iteration: " + str(self.itr) + "]"
+        return output
+    
+    def run(self):
+        time.sleep(0.1)
+        for i in range(self.itr):
+            for i, tpl in range(len(Map.objects_list)): # need global map
+                    if tpl[2].id == self.id:
+                        x = tpl[0]
+                        y = tpl[1]
+            for obj in Map.query(x, y, self.prox): # need global map
+                if(obj[2].type == "Player"):
+                    obj[2].stun(self.stun)
+
+        ### HEALTH OBJECT ###
+
+class Health(Object):
+    def __init__(self, name, m, inf):
+        super().__init__(name, "Health")
+        self.health = m
+        self.cap = inf
+
+    def __str__(self):
+        output = "Health: " + "[Name: '" + self.name + "', Health Capacity: " + str(self.health) + ", Infinite: " + str(self.cap) + "]"
+        return output
+    
+    def run(self):
+            for i, tpl in range(len(Map.objects_list)): # need global map
+                    if tpl[2].id == self.id:
+                        x = tpl[0]
+                        y = tpl[1]
+            cond = True
+            while(cond):
+                for obj in Map.query(x, y, 3): # need global map
+                    if(obj[2].type == "Player"):
+                        obj[2].health += self.health
+                        if(self.cap == False):
+                            cond = False
+
+
+
+
+
+
+
 
 class Map:
     def __init__(self, name, size, config):
@@ -10,26 +205,46 @@ class Map:
         self.objects_list = []
         self.teams = {}
         self.player_vision = 5
-        self.default_player_health = 100
-        self.default_player_repo = []
+        self.player_health = 100
+        self.player_repo = []
+        self.config = config
         self.parse_config(config)
+
+    def __str__(self):
+        teams_str = "\n".join(self.teams) 
+        
+        objects_str = ""
+        for i, item in enumerate(self.objects_list):
+            objects_item_str = "(" + ", ".join((map(str, item))) + ")"
+            objects_str += objects_item_str
+            if(i < len(self.objects_list) - 1):
+                objects_str += "\n"
+
+        repo_str = ""
+        for i, item in enumerate(self.player_repo):
+            repo_item_str  = "(" + ", ".join((map(str, item))) + ")"
+            repo_str = repo_str + repo_item_str
+            if(i < len(self.player_repo) - 1):
+                repo_str += "\n"
+        
+        output = "MAP\nName: " + self.name + "\nSize: (W: " + str(self.width) + ", H: " + str(self.height) + ")\nTeams On The Map:\n" + teams_str + "\nObjects In The Map:\n" + objects_str + "\nPlayer Vision: " + str(self.player_vision) + "\nPlayer Health: " + str(self.player_health) + "\nPlayer Repository:\n" + repo_str 
+        return output
 
     def parse_config(self, config):
         if config:
             if 'image' in config:
-                bg_img = cv.imread(config.image)
-                if(bg_img and bg_img.shape[0] == self.height and bg_img.shape[1] == self.width):
+                bg_img = cv.imread(config['image'])
+                if(len(bg_img) > 0 and bg_img.shape[0] == self.height and bg_img.shape[1] == self.width):
                     self.bg_img = bg_img
-                    
             if 'playervision' in config:
                 self.player_vision = config['playervision']
             if 'playerh' in config:
-                self.default_player_health = config['playerh']
+                self.player_health = config['playerh']
             if 'playerrepo' in config:
-                self.default_player_repo = config['playerrepo']
+                self.player_repo = config['playerrepo']
             if 'objects' in config:
-                self.objects_list = [Object(*obj) for obj in config['objects']]
-
+                self.objects_list = config['objects']
+            
     def addObject(self, name, type, x, y):
         if (type == "Health"):
             self.objects_list.append((x,y,Health(name)))
@@ -37,6 +252,15 @@ class Map:
             self.objects_list.append((x,y,Mine(name)))
         if (type == "Freezer"):
             self.objects_list.append((x,y,Freezer(name)))
+
+    def addHealthObject(self, name, x, y, health_val, inf):
+        self.objects_list.append((x, y, Health(name, health_val, inf)))
+    
+    def addMineObject(self, name, x, y, p, d, k):
+        self.objects_list.append(x, y, Mine(name, p, d, k))
+
+    def addFreezerObject(self, name, x, y, p, s, k):
+        self.objects_list.append((x, y, Freezer(name, p, s, k)))
     
     def removeObject(self, id):
         self.objects_list = [obj for obj in self.objects_list if obj[2].id != id]
@@ -45,9 +269,9 @@ class Map:
         return iter([(obj[2].id, obj[2].name, obj[2].type, obj[0], obj[1]) for obj in self.objects_list])
     
     def getimage(self, x, y, r):
-        r = self.player_vision if r is None else r
-
-        if self.bg_img is None:
+        r = self.player_vision if r == 0 else r
+        
+        if len(self.bg_img) == 0:
             return None
 
         return self.bg_img[max(0, y - r):min(self.height, y + r), max(0, x - r):min(self.width, x + r)]
@@ -55,45 +279,45 @@ class Map:
     def setimage(self, x, y, r, image):
         r = self.player_vision if r == 0 else r
 
-        if self.bg_img or image is None:
+        if len(self.bg_img) == 0 or image is None:
             return
-
         self.bg_img[max(0, y - r):min(self.height, y + r), max(0, x - r):min(self.width, x + r)] = image
     
     def query(self, x, y, r):
         if(r == 0):
-           r = self.config.playervision
+           r = self.player_vision
 
         new_objects_list = [obj for obj in self.objects_list if (max(0, x-r) <= obj[0] <= min(x+r,self.width) and (max(0,y-r) <= obj[1] <= min(self.height,y+r)))]
         return iter(new_objects_list)
     
     def join(self, player, team):
-        if player in [p[2].user for p in self.objects_list]:
-            return None
+        
+        for object in self.objects_list:
+            if(object[2].__class__.__name__ == 'Player' and object[2].username == player):
+                return None
 
-        if team not in self.teams:
-            team_map = Map(f'Team {team} Map', (self.width, self.height))
+
+        if team not in self.teams:  
+            team_map = Map(f'{self.name} (Team View {team})', (self.width, self.height), self.config)
             
-            team_map.bg_img = np.zeros((self.height,self.width,3), np.uint8)
-            team_map.bg_img.setimage(0, 0, 0, self.getimage(0,0,0))
+            team_map.bg_img = np.zeros((self.height,self.width,3), np.uint8)  #Initialize the map as blank image
+            team_map.setimage(0, 0, 0, self.getimage(0,0,0))
 
             self.teams[team] = team_map
 
-        p = Player(player, team, self.default_player_health, self.default_player_repo, self.teams[team])
+        p = Player(player, team, self.player_health, self.player_repo, self.teams[team])
         self.objects_list.append((0,0,p))
-
+        
         return p
 
     def leave(self, player, team):
-        id = [obj[2].id for obj in self.objects_list if obj[2].name == player and obj[2].team == team]
-
-        if(id): 
-            id = id[0]
-            self.removeObject(id)
-        else:
-            id = None
-
+        for object in self.objects_list:
+            if(object[2].__class__.__name__ == 'Player' and object[2].username == player and object[2].team == team):
+                self.removeObject(object[2].id)
         return
     
     def teammap(self, team):
         return self.teams.get(team)
+    
+
+
