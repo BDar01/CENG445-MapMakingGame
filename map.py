@@ -5,70 +5,95 @@ import numpy as np
 class Map:
     def __init__(self, name, size, config):
         self.name = name
-        self.size = size
-        self.config = config
-        self.objects_list = config.objects
-        self.local_maps = []
+        self.width, self.height = size
+        self.bg_img = np.zeros((self.height,self.width,3), np.uint8)
+        self.objects_list = []
+        self.teams = {}
+        self.player_vision = 5
+        self.default_player_health = 100
+        self.default_player_repo = []
+        self.parse_config(config)
 
-        bg_img = cv.imread(config.image)
-        if(bg_img and bg_img.shape[0] == size[1] and bg_img.shape[1] == size[0]):
-            self.background_image = bg_img
-        else:
-            self.background_image = np.zeros((size[1],size[0],3), np.uint8)
+    def parse_config(self, config):
+        if config:
+            if 'image' in config:
+                bg_img = cv.imread(config.image)
+                if(bg_img and bg_img.shape[0] == self.height and bg_img.shape[1] == self.width):
+                    self.bg_img = bg_img
+            if 'playervision' in config:
+                self.player_vision = config['playervision']
+            if 'playerh' in config:
+                self.default_player_health = config['playerh']
+            if 'playerrepo' in config:
+                self.default_player_repo = config['playerrepo']
+            if 'objects' in config:
+                self.objects_list = [Object(*obj) for obj in config['objects']]
 
     def addObject(self, name, type, x, y):
-        object = Object(name, type)
-        self.objects_list.append((x,y,object))
+        if (type == "Health"):
+            self.objects_list.append((x,y,Health(name)))
+        if (type == "Mine"):
+            self.objects_list.append((x,y,Mine(name)))
+        if (type == "Freezer"):
+            self.objects_list.append((x,y,Freezer(name)))
     
     def removeObject(self, id):
-        new_objects_list = [obj for obj in self.objects_list if obj.id != id]
-        self.objects_list = new_objects_list
+        self.objects_list = [obj for obj in self.objects_list if obj.id != id]
 
     def listObjects(self):
         output = [(obj[2].id, obj[2].name, obj[2].type, obj[0], obj[1]) for obj in self.objects_list]
         return iter(output)
     
     def getimage(self, x, y, r):
-        if(not r):
-           r = self.config.playervision
-        bg_image = np.zeros((2*r,2*r,3), np.uint8)
+        r = self.player_vision if r is None else r
 
-        for i in range(-r, r+1):
-            for j in range(-r, r+1):
-                for k in range(3):
-                    bg_image[i+r][j+r][k] = self.background_image[i+x][j+y][k]
-        return bg_image
+        if self.bg_img is None:
+            return None
+
+        return self.bg_img[max(0, y - r):min(self.height, y + r), max(0, x - r):min(self.width, x + r)]
     
     def setimage(self, x, y, r, image):
-        if(not r):
-           r = self.config.playervision
-        for i in range(-r, r+1):
-            for j in range(-r, r+1):
-                for k in range(3):
-                    self.background_image[i+x][j+y][k] = image[i+r][j+r][k]
+        r = self.player_vision if r == 0 else r
+
+        if self.bg_img or image is None:
+            return
+
+        self.bg_img[max(0, y - r):min(self.height, y + r), max(0, x - r):min(self.width, x + r)] = image
     
     def query(self, x, y, r):
         if(not r):
            r = self.config.playervision
-        new_objects_list = [obj for obj in self.objects_list if (r-x <= obj[0] <= r+x) and (r-y <= obj[0] <= r+y)]
+        new_objects_list = [obj for obj in self.objects_list if (max(0, x-r) <= obj[0] <= min(x+r,self.width) and (max(0,y-r) <= obj[1] <= min(self.height,y+r)))]
         return iter(new_objects_list)
     
     def join(self, player, team):
-        if (team in [obj[0] for obj in self.local_maps]):
-            tmap = [obj for obj in self.local_maps if obj[0] == team][1]
-        else:
-            tmap = Map(team, self.size)
-            self.local_maps.append((team, tmap))
+        if player in [p.user for p in self.objects]:
+            # Player is already in the map, do nothing
+            return None
 
-        p = Player(player, team, self.config.playerh, self.config.playerrepo, tmap)
-        self.objects_list.append((0, 0, p))
+        if team not in self.teams:
+            # Create a new map for the team
+            team_map = Map(f'Team {team} Map', (self.width, self.height))
+            
+            team_map.bg_img = np.zeros((self.height,self.width,3), np.uint8)  # Set team map's background image
+            team_map.bg_img.setimage(0, 0, 0, self.getimage(0,0))
+
+            self.teams[team] = team_map
+
+        # Create a new Player instance and associate it with the team's map
+        p = Player(player, team, self.default_player_health, self.default_player_repo, self.teams[team])
+        self.objects.append(p)
+
         return p
 
     def leave(self, player, team):
-        id = [obj[2].id for obj in self.objects_list if obj[2].name == player][0]
-        self.removeObject(id)
+        id = [obj[2].id for obj in self.objects_list if obj[2].name == player and obj[2].team == team]
+        if(id): 
+            id = id[0]
+            self.removeObject(id)
+        else:
+            id = None
         return
     
     def teammap(self, team):
-        tmap = [obj for obj in self.local_maps if obj[0] == team]
-        return tmap[1]
+        return self.teams.get(team)
