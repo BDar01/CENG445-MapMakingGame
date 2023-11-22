@@ -9,7 +9,7 @@ config1 = {"image":"BackgroundImage1.jpg",
            "playervision": 10, 
            "playerh": 100, 
            "playerrepo": [("Mine", "Mine Repo1", 3, 20, 1000), ("Freezer", "Freezer Repo1", 3, 5, 10000)], 
-           "objects": [(2, 3, mineObject), (10, 10, freezerObject), (-2, -5, healthObject), (20, 20, healthObject2)]
+           "objects": [(2, 3, mineObject), (10, 10, freezerObject), (2, 5, healthObject), (20, 20, healthObject2)]
         }
 size = (612, 408)
 map1 = Map("Map1 (Global)", size, config1)
