@@ -38,7 +38,7 @@ class Player(Object):
         return output
 
     def updatePositionOfPlayer(self, direction):
-        objects_list = Map.objects_list # need global map
+        objects_list = self.map.objects_list # need global map
         object_list_length = len(objects_list)
 
         if(direction == "W"):
@@ -81,12 +81,12 @@ class Player(Object):
                 if tpl[2].id == self.id:
                     objects_list[i] = (tpl[0] - 1, tpl[1] - 1, tpl[2])
 
-    def updateBackgroundImage(self, direction):
-        for i, tpl in range(len(Map.objects_list)): # need global map
+    def updateBackgroundImage(self):
+        for tpl in self.map.objects_list: # need global map
             if tpl[2].id == self.id:
                 x = tpl[0]
                 y = tpl[1]
-        self.map.setimage(x, y, 0, Map.getimage(x,y,0)) # need global map
+        self.map.setimage(x, y, 0, self.map.getimage(x,y,0)) # need global map
     
     def move(self, direction):
 
@@ -125,7 +125,7 @@ class Player(Object):
         ### MINE OBJECT ###
 
 class Mine(Object):
-    def __init__(self, name, p, d, k):
+    def __init__(self, name, p = 5, d = 10, k = 1000):
         super().__init__(name, "Mine")
         self.prox = p
         self.dmg = d
@@ -151,7 +151,7 @@ class Mine(Object):
         ### FREEZER OBJECT ###
 
 class Freezer(Object):
-    def __init__(self, name, p, d, k):
+    def __init__(self, name, p = 5, d = 10, k = 1000):
         super().__init__(name, "Freezer")
         self.prox = p
         self.stun = d
@@ -175,7 +175,7 @@ class Freezer(Object):
         ### HEALTH OBJECT ###
 
 class Health(Object):
-    def __init__(self, name, m, inf):
+    def __init__(self, name, m = 30, inf = True):
         super().__init__(name, "Health")
         self.health = m
         self.cap = inf
@@ -216,6 +216,7 @@ class Map:
         self.player_repo = []
         self.config = config
         self.parse_config(config)
+        self.initializeObjects()
 
     def __str__(self):
         teams_str = "\n".join(self.teams) 
@@ -236,6 +237,11 @@ class Map:
         
         output = "MAP\nName: " + self.name + "\nSize: (W: " + str(self.width) + ", H: " + str(self.height) + ")\nTeams On The Map:\n" + teams_str + "\nObjects In The Map:\n" + objects_str + "\nPlayer Vision: " + str(self.player_vision) + "\nPlayer Health: " + str(self.player_health) + "\nPlayer Repository:\n" + repo_str 
         return output
+    
+    def initializeObjects(self):
+        for obj in self.objects_list:
+            if(obj[2].__class__.__name__ != 'Player'):
+                obj[2].run()
 
     def parse_config(self, config):
         if config:
@@ -254,11 +260,17 @@ class Map:
             
     def addObject(self, name, type, x, y):
         if (type == "Health"):
-            self.objects_list.append((x,y,Health(name)))
+            healthObject = Health(name)
+            self.objects_list.append((x,y,healthObject))
+            healthObject.run()
         if (type == "Mine"):
+            mineObject = Mine(name)
             self.objects_list.append((x,y,Mine(name)))
+            mineObject.run()
         if (type == "Freezer"):
-            self.objects_list.append((x,y,Freezer(name)))
+            freezerObject = Freezer(name)
+            self.objects_list.append((x,y,freezerObject))
+            freezerObject.run()
 
     def addHealthObject(self, x, y, name, health_val, inf):
         healthObject = Health(name, health_val, inf)
