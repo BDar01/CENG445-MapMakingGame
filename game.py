@@ -44,42 +44,42 @@ class Player(Object):
         if(direction == "W"):
             for i, tpl in range(object_list_length):
                 if tpl[2].id == self.id:
-                    objects_list[i] = (tpl[0] - 1, tpl[1], tpl[2])
+                    objects_list[i] = (max(0, tpl[0] - 1), tpl[1], tpl[2])
 
         elif(direction == "NW"):
             for i, tpl in range(object_list_length):
                 if tpl[2].id == self.id:
-                    objects_list[i] = (tpl[0] - 1, tpl[1] + 1, tpl[2])
+                    objects_list[i] = (max(0, tpl[0] - 1), min(self.map.height, tpl[1] + 1), tpl[2])
         
         elif(direction == "N"):
             for i, tpl in range(object_list_length):
                 if tpl[2].id == self.id:
-                    objects_list[i] = (tpl[0], tpl[1] + 1, tpl[2])
+                    objects_list[i] = (tpl[0], min(self.map.height, tpl[1] + 1), tpl[2])
 
         elif(direction == "NE"):
             for i, tpl in range(object_list_length):
                 if tpl[2].id == self.id:
-                    objects_list[i] = (tpl[0] + 1, tpl[1] + 1, tpl[2])
+                    objects_list[i] = (min(self.map.width, tpl[0] + 1), min(self.map.height, tpl[1] + 1), tpl[2])
 
         elif(direction == "E"):
             for i, tpl in range(object_list_length):
                 if tpl[2].id == self.id:
-                    objects_list[i] = (tpl[0] + 1, tpl[1], tpl[2])
+                    objects_list[i] = (min(self.map.width, tpl[0] + 1), tpl[1], tpl[2])
 
         elif(direction == "SE"):
             for i, tpl in range(object_list_length):
                 if tpl[2].id == self.id:
-                    objects_list[i] = (tpl[0] + 1, tpl[1] - 1, tpl[2])
+                    objects_list[i] = (min(self.map.width, tpl[0] + 1), max(0, tpl[1] - 1), tpl[2])
 
         elif(direction == "S"):
             for i, tpl in range(object_list_length):
                 if tpl[2].id == self.id:
-                    objects_list[i] = (tpl[0], tpl[1] - 1, tpl[2])
+                    objects_list[i] = (tpl[0], max(0, tpl[1] - 1), tpl[2])
 
         elif(direction == "SW"):
             for i, tpl in range(object_list_length):
                 if tpl[2].id == self.id:
-                    objects_list[i] = (tpl[0] - 1, tpl[1] - 1, tpl[2])
+                    objects_list[i] = (max(0, tpl[0] - 1), max(0, tpl[1] - 1), tpl[2])
 
     def updateBackgroundImage(self):
         for tpl in self.map.objects_list: # need global map
@@ -114,7 +114,7 @@ class Player(Object):
                         x = tpl[0]
                         y = tpl[1]
             if (drop_obj[0] == "Health"):
-                self.map.addHealthObject(max(0,x-5), y, drop_obj[1], drop_obj[2], drop_obj[3])
+                self.map.addHealthObject(max(0,x-5), max(0,y-5), drop_obj[1], drop_obj[2], drop_obj[3])
             if (drop_obj[0] == "Mine"):
                 self.map.addMineObject(x, y, drop_obj[1], drop_obj[2], drop_obj[3], drop_obj[4])
             if (drop_obj[0] == "Freezer"):
