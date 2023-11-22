@@ -299,7 +299,7 @@ class Map:
         if config:
             if ('image' in config):
                 bg_img = cv.imread(config['image'])
-                if(bg_img and bg_img.shape[0] == self.height and bg_img.shape[1] == self.width):
+                if(bg_img is not None and bg_img.shape[0] == self.height and bg_img.shape[1] == self.width):
                     self.bg_img = bg_img
             if ('playervision' in config):
                 self.player_vision = config['playervision']
