@@ -43,75 +43,75 @@ class Player(Object):
 
         if(direction == "W"):
             for i, tpl in enumerate(objects_list):
-                if tpl[2].id == self.id:
+                if (tpl[2].id == self.id):
                     objects_list[i] = (max(0, tpl[0] - 1), tpl[1], tpl[2])
             for i, tpl in enumerate(team_view_object_list):
-                if tpl[2].id == self.id:
+                if (tpl[2].id == self.id):
                     team_view_object_list[i] = (max(0, tpl[0] - 1), tpl[1], tpl[2])
 
         elif(direction == "NW"):
             for i, tpl in enumerate(objects_list):
-                if tpl[2].id == self.id:
+                if (tpl[2].id == self.id):
                     objects_list[i] = (max(0, tpl[0] - 1), min(self.map.height, tpl[1] + 1), tpl[2])
             for i, tpl in enumerate(team_view_object_list):
-                if tpl[2].id == self.id:
+                if (tpl[2].id == self.id):
                     team_view_object_list[i] = (max(0, tpl[0] - 1), min(self.map.height, tpl[1] + 1), tpl[2])
         
         elif(direction == "N"):
             for i, tpl in enumerate(objects_list):
-                if tpl[2].id == self.id:
+                if (tpl[2].id == self.id):
                     objects_list[i] = (tpl[0], min(self.map.height, tpl[1] + 1), tpl[2])
             for i, tpl in enumerate(team_view_object_list):
-                if tpl[2].id == self.id:
+                if (tpl[2].id == self.id):
                     team_view_object_list[i] = (tpl[0], min(self.map.height, tpl[1] + 1), tpl[2])
 
         elif(direction == "NE"):
             for i, tpl in enumerate(objects_list):
-                if tpl[2].id == self.id:
+                if (tpl[2].id == self.id):
                     objects_list[i] = (min(self.map.width, tpl[0] + 1), min(self.map.height, tpl[1] + 1), tpl[2])
             for i, tpl in enumerate(team_view_object_list):
-                if tpl[2].id == self.id:
+                if (tpl[2].id == self.id):
                     team_view_object_list[i] = (min(self.map.width, tpl[0] + 1), min(self.map.height, tpl[1] + 1), tpl[2])
 
         elif(direction == "E"):
             for i, tpl in enumerate(objects_list):
-                if tpl[2].id == self.id:
+                if (tpl[2].id == self.id):
                     objects_list[i] = (min(self.map.width, tpl[0] + 1), tpl[1], tpl[2])
             print(self.map.teams[self.team])
             for i, tpl in enumerate(team_view_object_list):
-                if tpl[2].id == self.id:
+                if (tpl[2].id == self.id):
                     team_view_object_list[i] = (min(self.map.width, tpl[0] + 1), tpl[1], tpl[2])
 
         elif(direction == "SE"):
             for i, tpl in enumerate(objects_list):
-                if tpl[2].id == self.id:
+                if (tpl[2].id == self.id):
                     objects_list[i] = (min(self.map.width, tpl[0] + 1), max(0, tpl[1] - 1), tpl[2])
             for i, tpl in enumerate(team_view_object_list):
-                if tpl[2].id == self.id:
+                if (tpl[2].id == self.id):
                     team_view_object_list[i] = (min(self.map.width, tpl[0] + 1), max(0, tpl[1] - 1), tpl[2])
 
         elif(direction == "S"):
             for i, tpl in enumerate(objects_list):
-                if tpl[2].id == self.id:
+                if (tpl[2].id == self.id):
                     objects_list[i] = (tpl[0], max(0, tpl[1] - 1), tpl[2])
             for i, tpl in enumerate(team_view_object_list):
-                if tpl[2].id == self.id:
+                if (tpl[2].id == self.id):
                     team_view_object_list[i] = (tpl[0], max(0, tpl[1] - 1), tpl[2])
 
         elif(direction == "SW"):
             for i, tpl in enumerate(objects_list):
-                if tpl[2].id == self.id:
+                if (tpl[2].id == self.id):
                     objects_list[i] = (max(0, tpl[0] - 1), max(0, tpl[1] - 1), tpl[2])
             for i, tpl in enumerate(team_view_object_list):
-                if tpl[2].id == self.id:
+                if (tpl[2].id == self.id):
                     team_view_object_list[i] = (max(0, tpl[0] - 1), max(0, tpl[1] - 1), tpl[2])
 
     def updateBackgroundImage(self):
         for tpl in self.map.objects_list: 
-            if tpl[2].id == self.id:
+            if (tpl[2].id == self.id):
                 x = tpl[0]
                 y = tpl[1]
-        self.map.setimage(x, y, 0, self.map.getimage(x,y,0)) 
+        self.map.teams[self.team].setimage(x, y, 0, self.map.getimage(x,y,0)) 
     
     def move(self, direction):
 
@@ -135,7 +135,7 @@ class Player(Object):
         drop_obj = available_objects[0]
         if(drop_obj):
             for tpl in self.map.objects_list: 
-                    if tpl[2].id == self.id:
+                    if (tpl[2].id == self.id):
                         x = tpl[0]
                         y = tpl[1]
             if (drop_obj[0] == "Health"):
@@ -178,7 +178,7 @@ class Mine(Object):
     def run(self, map):
         time.sleep(1)
         for tpl in map.objects_list:
-            if tpl[2].id == self.id:
+            if (tpl[2].id == self.id):
                 x = tpl[0]
                 y = tpl[1]
         exploded = False
@@ -209,7 +209,7 @@ class Freezer(Object):
     def run(self, map):
         time.sleep(0.1)
         for tpl in map.objects_list: 
-             if tpl[2].id == self.id:
+             if (tpl[2].id == self.id):
                 x = tpl[0]
                 y = tpl[1]
         stunned = False
@@ -237,7 +237,7 @@ class Health(Object):
     
     def run(self, map):
         for tpl in map.objects_list: 
-            if tpl[2].id == self.id:
+            if (tpl[2].id == self.id):
                 x = tpl[0]
                 y = tpl[1]
         cond = True
@@ -297,17 +297,17 @@ class Map:
 
     def parse_config(self, config):
         if config:
-            if 'image' in config:
+            if ('image' in config):
                 bg_img = cv.imread(config['image'])
-                if(len(bg_img) > 0 and bg_img.shape[0] == self.height and bg_img.shape[1] == self.width):
+                if(bg_img and bg_img.shape[0] == self.height and bg_img.shape[1] == self.width):
                     self.bg_img = bg_img
-            if 'playervision' in config:
+            if ('playervision' in config):
                 self.player_vision = config['playervision']
-            if 'playerh' in config:
+            if ('playerh' in config):
                 self.player_health = config['playerh']
-            if 'playerrepo' in config:
+            if ('playerrepo' in config):
                 self.player_repo = config['playerrepo']
-            if 'objects' in config:
+            if ('objects' in config):
                 self.objects_list = config['objects']
             
     def addObject(self, name, type, x, y):
@@ -351,7 +351,7 @@ class Map:
     def getimage(self, x, y, r):
         r = self.player_vision if r == 0 else r
         
-        if len(self.bg_img) == 0:
+        if (self.bg_img is None):
             return None
 
         return self.bg_img[max(0, y - r):min(self.height, y + r), max(0, x - r):min(self.width, x + r)]
@@ -359,7 +359,7 @@ class Map:
     def setimage(self, x, y, r, image):
         r = self.player_vision if r == 0 else r
 
-        if len(self.bg_img) == 0 or image is None:
+        if (self.bg_img is None or image is None):
             return
         self.bg_img[max(0, y - r):min(self.height, y + r), max(0, x - r):min(self.width, x + r)] = image
     
@@ -376,7 +376,7 @@ class Map:
             if(object[2].__class__.__name__ == 'Player' and object[2].username == player):
                 return None
 
-        if team not in self.teams:  
+        if (team not in self.teams):  
             team_map = Map(f'{self.name} (Team View {team})', (self.width, self.height), self.config)
             
             team_map.bg_img = np.zeros((self.height,self.width,3), np.uint8)  #Initialize the map as blank image
