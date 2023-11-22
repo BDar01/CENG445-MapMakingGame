@@ -114,7 +114,7 @@ class Player(Object):
                         x = tpl[0]
                         y = tpl[1]
             if (drop_obj[0] == "Health"):
-                self.map.addHealthObject(x-5, y, drop_obj[1], drop_obj[2], drop_obj[3])
+                self.map.addHealthObject(max(0,x-5), y, drop_obj[1], drop_obj[2], drop_obj[3])
             if (drop_obj[0] == "Mine"):
                 self.map.addMineObject(x, y, drop_obj[1], drop_obj[2], drop_obj[3], drop_obj[4])
             if (drop_obj[0] == "Freezer"):
