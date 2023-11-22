@@ -27,7 +27,14 @@ class Player(Object):
         self.map = map
 
     def __str__(self):
-        output = "Player: [Username: '" + self.username +  "', Team: '" + self.team + "', Health: " + str(self.health) + "]"
+        repo_str = "\n"
+        for i, item in enumerate(self.repo):
+            repo_item_str  = "(" + ", ".join((map(str, item))) + ")"
+            repo_str = repo_str + repo_item_str
+            if(i < len(self.repo) - 1):
+                repo_str += "\n"
+
+        output = "Player: \nUsername: '" + self.username +  "'\nTeam: '" + self.team + "'\nHealth: " + str(self.health) + "\nRepository: " + repo_str 
         return output
 
     def updatePositionOfPlayer(self, direction):
@@ -79,7 +86,7 @@ class Player(Object):
             if tpl[2].id == self.id:
                 x = tpl[0]
                 y = tpl[1]
-        self.map.bg_img.setimage(x, y, 0, Map.getimage(x,y,0)) # need global map
+        self.map.setimage(x, y, 0, Map.getimage(x,y,0)) # need global map
     
     def move(self, direction):
 
@@ -91,7 +98,7 @@ class Player(Object):
         if (self.health <= 0):
             self.map.leave(self.user.team)
 
-    def competition(self):
+    def competition(self):   #Will be implemented in next phases.
         return
 
     def stun(self, stun):
@@ -100,22 +107,20 @@ class Player(Object):
     def drop(self, objecttype):
 
         available_objects = [obj for obj in self.repo if obj[0] == objecttype]
-        
         drop_obj = available_objects[0]
         if(drop_obj):
-            for i, tpl in range(len(Map.objects_list)): # need global map
+            for tpl in self.map.objects_list: 
                     if tpl[2].id == self.id:
                         x = tpl[0]
                         y = tpl[1]
             if (drop_obj[0] == "Health"):
-                self.map.objects_list.append((x,y,Health(drop_obj[1],drop_obj[2],drop_obj[3])))
+                self.map.addHealthObject(x, y, drop_obj[1], drop_obj[2], drop_obj[3])
             if (drop_obj[0] == "Mine"):
-                self.map.objects_list.append((x,y,Mine(drop_obj[1],drop_obj[2],drop_obj[3], drop_obj[4])))
+                self.map.addMineObject(x, y, drop_obj[1], drop_obj[2], drop_obj[3], drop_obj[4])
             if (drop_obj[0] == "Freezer"):
-                self.map.objects_list.append((x,y,Freezer(drop_obj[1],drop_obj[2],drop_obj[3], drop_obj[4])))
-
-        new_repo = [obj for obj in self.repo if obj.id != drop_obj.id]
-        self.repo = new_repo
+                self.map.addFreezerObject(x, y, drop_obj[1], drop_obj[2], drop_obj[3], drop_obj[4])
+        
+        self.repo.remove(drop_obj)
 
         ### MINE OBJECT ###
 
@@ -130,16 +135,18 @@ class Mine(Object):
         output = "Mine: " + "[Name: '" + self.name + "', Proximity: " + str(self.prox) + ", Damage: " + str(self.dmg) + ", Iteration: " + str(self.itr) + "]"
         return output
 
-    def run(self):
-        time.sleep(0.1)
+    def run(self, map):
+        time.sleep(1)
+        for tpl in map.objects_list:
+            if tpl[2].id == self.id:
+                x = tpl[0]
+                y = tpl[1]
         for i in range(self.itr):
-            for i, tpl in range(len(Map.objects_list)): # need global map
-                    if tpl[2].id == self.id:
-                        x = tpl[0]
-                        y = tpl[1]
-            for obj in Map.query(x, y, self.prox): # need global map
+            for obj in map.query(x, y, self.prox):
                 if(obj[2].type == "Player"):
                     obj[2].health -= self.dmg
+                    break
+            break
 
         ### FREEZER OBJECT ###
 
@@ -154,14 +161,14 @@ class Freezer(Object):
         output = "Freezer: " + "[Name: '" + self.name + "', Proximity: " + str(self.prox) + ", Damage: " + str(self.stun) + ", Iteration: " + str(self.itr) + "]"
         return output
     
-    def run(self):
+    def run(self, map):
         time.sleep(0.1)
+        for tpl in map.objects_list: 
+             if tpl[2].id == self.id:
+                x = tpl[0]
+                y = tpl[1]
         for i in range(self.itr):
-            for i, tpl in range(len(Map.objects_list)): # need global map
-                    if tpl[2].id == self.id:
-                        x = tpl[0]
-                        y = tpl[1]
-            for obj in Map.query(x, y, self.prox): # need global map
+            for obj in map.query(x, y, self.prox):
                 if(obj[2].type == "Player"):
                     obj[2].stun(self.stun)
 
@@ -177,14 +184,14 @@ class Health(Object):
         output = "Health: " + "[Name: '" + self.name + "', Health Capacity: " + str(self.health) + ", Infinite: " + str(self.cap) + "]"
         return output
     
-    def run(self):
-            for i, tpl in range(len(Map.objects_list)): # need global map
-                    if tpl[2].id == self.id:
-                        x = tpl[0]
-                        y = tpl[1]
+    def run(self, map):
+            for tpl in map.objects_list: # need global map
+                if tpl[2].id == self.id:
+                    x = tpl[0]
+                    y = tpl[1]
             cond = True
             while(cond):
-                for obj in Map.query(x, y, 3): # need global map
+                for obj in map.query(x, y, 3): # need global map
                     if(obj[2].type == "Player"):
                         obj[2].health += self.health
                         if(self.cap == False):
@@ -253,14 +260,20 @@ class Map:
         if (type == "Freezer"):
             self.objects_list.append((x,y,Freezer(name)))
 
-    def addHealthObject(self, name, x, y, health_val, inf):
-        self.objects_list.append((x, y, Health(name, health_val, inf)))
+    def addHealthObject(self, x, y, name, health_val, inf):
+        healthObject = Health(name, health_val, inf)
+        self.objects_list.append((x, y, healthObject))
+        healthObject.run(self)
     
-    def addMineObject(self, name, x, y, p, d, k):
-        self.objects_list.append(x, y, Mine(name, p, d, k))
+    def addMineObject(self, x, y, name, p, d, k):
+        mineObject = Mine(name, p, d, k)
+        self.objects_list.append((x, y, mineObject))
+        mineObject.run(self)
 
-    def addFreezerObject(self, name, x, y, p, s, k):
-        self.objects_list.append((x, y, Freezer(name, p, s, k)))
+    def addFreezerObject(self, x, y, name, p, s, k):
+        freezerObject =  Freezer(name, p, s, k)
+        self.objects_list.append((x, y, freezerObject))
+        freezerObject.run(self)
     
     def removeObject(self, id):
         self.objects_list = [obj for obj in self.objects_list if obj[2].id != id]
@@ -306,7 +319,7 @@ class Map:
             self.teams[team] = team_map
 
         p = Player(player, team, self.player_health, self.player_repo, self.teams[team])
-        self.objects_list.append((0,0,p))
+        self.objects_list.append((0, 0, p))
         
         return p
 

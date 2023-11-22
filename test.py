@@ -8,7 +8,7 @@ freezerObject = Freezer("Freezer1", 5, 4, 1000)
 config1 = {"image":"BackgroundImage1.jpg", 
            "playervision": 10, 
            "playerh": 100, 
-           "playerrepo": [("Mine", 3, 20, 1000), ("Freezer", 3, 5, 10000)], 
+           "playerrepo": [("Mine", "Mine Repo1", 3, 20, 1000), ("Freezer", "Freezer Repo1", 3, 5, 10000)], 
            "objects": [(2, 3, mineObject), (10, 10, freezerObject), (-2, -5, healthObject), (-10, -10, healthObject2)]
         }
 size = (612, 408)
@@ -17,6 +17,12 @@ print("Map Created. Here it is:")
 print(map1)
 
 
-map1.join("Baran", "Red Team")
+player = map1.join("Baran", "Red Team")
 print("Baran joined")
 print(map1)
+print("*********")
+print(player)
+player.drop("Mine")
+print(player)
+
+
