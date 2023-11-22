@@ -96,7 +96,7 @@ class Player(Object):
         self.competition()
 
         if (self.health <= 0):
-            self.map.leave(self.user.team)
+            self.map.leave(self.username, self.team)
 
     def competition(self):   #Will be implemented in next phases.
         return
