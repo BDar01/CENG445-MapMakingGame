@@ -1,4 +1,4 @@
-from map import *
+from game import *
 
 mineObject = Mine("Mine1", 7, 30, 1000)    
 healthObject = Health("Health1", 20, False)
