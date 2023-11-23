@@ -187,7 +187,6 @@ class Mine(Object):
                 if(obj[2].type == "Player"):
                     obj[2].health -= self.dmg
                     exploded = True
-                    break
             if(exploded):
                 break
         map.removeObject(self.id)
@@ -218,7 +217,6 @@ class Freezer(Object):
                 if(obj[2].type == "Player"):
                     stunned = True
                     obj[2].stun(self.stun)
-                    break
             if(stunned):
                 break
         map.removeObject(self.id)
@@ -247,7 +245,6 @@ class Health(Object):
                     obj[2].health += self.health
                     if(self.cap == False):
                         cond = False
-                        break
         map.removeObject(self.id)
 
 
