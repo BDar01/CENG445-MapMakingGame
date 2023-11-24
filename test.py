@@ -21,7 +21,7 @@ print("Map 1 Created. Here it is:")
 print("Map 1 Line 1:", map1) #Map 1 Line 1, Here we can see that map 1 is instantiated properly.
 print(separator)
 
-config2 = {"image":"BackgroundImage2.jpg", 
+config2 = {"image":"BackgroundImage1.jpg", 
            "playervision": 8, 
            "playerh": 120, 
            "playerrepo": [("Mine", "Mine Repo2", 6, 25, 1000), ("Freezer", "Freezer Repo2", 10, 3, 5000)], 
@@ -42,6 +42,12 @@ player1b = map1.join("Dar", "Red Team")
 print("Dar joined")
 print("Map 1 Line 3:", map1) #Map 1 Line 3, Here we can see that Player 1b is added to the objects of the map 1, which means the player properly joined the map.
 print(separator)
+print(player1.map.teams[player1.team])
+print(separator)
+print(player1b.map.teams[player1b.team])
+
+
+
 
 player2 = map2.join("Basim", "Blue Team")
 print("Basim joined")
@@ -74,7 +80,6 @@ player2.drop("Mine")
 print(map2)
 print(player2.map.teams[player2.team])
 print("Map 2 Line 4:", player2) #By looking to this line (comparing it with Map 2 Line 3) we can see it dropped the Mine and since the mine is in our posiiton and we didn't go away before it activates, it decreased our health value.
-
 
 player1.move("E")
 print("Map 1 Line 10:", "Global View Update", ([obj for obj in player1.map.objects_list if obj[2].__class__.__name__ == "Player" and obj[2].id == player1.id][0][0], 
