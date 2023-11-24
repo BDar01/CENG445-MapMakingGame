@@ -41,13 +41,6 @@ print(separator)
 player1b = map1.join("Dar", "Red Team")
 print("Dar joined")
 print("Map 1 Line 3:", map1) #Map 1 Line 3, Here we can see that Player 1b is added to the objects of the map 1, which means the player properly joined the map.
-print(separator)
-print(player1.map.teams[player1.team])
-print(separator)
-print(player1b.map.teams[player1b.team])
-
-
-
 
 player2 = map2.join("Basim", "Blue Team")
 print("Basim joined")
