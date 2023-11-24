@@ -77,7 +77,6 @@ class Player(Object):
             for i, tpl in enumerate(objects_list):
                 if (tpl[2].id == self.id):
                     objects_list[i] = (min(self.map.width, tpl[0] + 1), tpl[1], tpl[2])
-            print(self.map.teams[self.team])
             for i, tpl in enumerate(team_view_object_list):
                 if (tpl[2].id == self.id):
                     team_view_object_list[i] = (min(self.map.width, tpl[0] + 1), tpl[1], tpl[2])
@@ -151,14 +150,20 @@ class Player(Object):
                 elif min(self.map.height, y+5) == y+5:
                     nx = 0
                     ny = y+5
-                self.map.addHealthObject(nx, ny, drop_obj[1], drop_obj[2], drop_obj[3])
-                self.map.teams[self.team].addHealthObject(nx, ny, drop_obj[1], drop_obj[2], drop_obj[3])
+                healthObject = Health(drop_obj[1], drop_obj[2], drop_obj[3])
+                self.map.addHealthObject(nx, ny, healthObject)
+                self.map.teams[self.team].addHealthObject(nx, ny, healthObject)
+                healthObject.run(self.map)
             if (drop_obj[0] == "Mine"):
-                self.map.addMineObject(x, y, drop_obj[1], drop_obj[2], drop_obj[3], drop_obj[4])
-                self.map.teams[self.team].addMineObject(x, y, drop_obj[1], drop_obj[2], drop_obj[3], drop_obj[4])
+                mineObject = Mine(drop_obj[1], drop_obj[2], drop_obj[3], drop_obj[4])
+                self.map.addMineObject(x, y, mineObject)
+                self.map.teams[self.team].addMineObject(x, y, mineObject)
+                mineObject.run(self.map)
             if (drop_obj[0] == "Freezer"):
-                self.map.addFreezerObject(x, y, drop_obj[1], drop_obj[2], drop_obj[3], drop_obj[4])
-                self.map.teams[self.team].addFreezerObject(x, y, drop_obj[1], drop_obj[2], drop_obj[3], drop_obj[4])
+                freezerObject =  Freezer(drop_obj[1], drop_obj[2], drop_obj[3], drop_obj[4])
+                self.map.addFreezerObject(x, y, freezerObject)
+                self.map.teams[self.team].addFreezerObject(x, y, freezerObject)
+                freezerObject.run(self.map)
         
         self.repo.remove(drop_obj)
 
@@ -321,20 +326,14 @@ class Map:
             self.objects_list.append((x,y,freezerObject))
             freezerObject.run(self)
 
-    def addHealthObject(self, x, y, name, health_val, inf):
-        healthObject = Health(name, health_val, inf)
+    def addHealthObject(self, x, y, healthObject):
         self.objects_list.append((x, y, healthObject))
-        healthObject.run(self)
     
-    def addMineObject(self, x, y, name, p, d, k):
-        mineObject = Mine(name, p, d, k)
+    def addMineObject(self, x, y, mineObject):
         self.objects_list.append((x, y, mineObject))
-        mineObject.run(self)
 
-    def addFreezerObject(self, x, y, name, p, s, k):
-        freezerObject =  Freezer(name, p, s, k)
+    def addFreezerObject(self, x, y, freezerObject):
         self.objects_list.append((x, y, freezerObject))
-        freezerObject.run(self)
 
     def addPlayerObject(self, x,y, p):
         self.objects_list.append((x, y, p))
