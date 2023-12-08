@@ -1,26 +1,82 @@
 import cv2 as cv
 import numpy as np
 import time
+import hashlib
+import uuid
 
-       ### OBJECT ###
+        ### USER ###
+class User:
+    user_objects = {}
+    tok = -1  
+
+    def __init__(self, username, email, fullname, passwd):
+        self.user_id = str(uuid.uuid4())
+        self.username = username
+        self.email = email
+        self.fullname = fullname
+        self.pwd_hash = hashlib.sha256(passwd.encode()).hexdigest()
+        self.token = -1
+    
+        User.user_objects[self.user_id] = self
+
+    def __str__(self):
+        return f"User ID: {self.user_id}\nUsername: {self.username}\nEmail: {self.email}\nFull name: {self.fullname}"
+
+    def update(self, username=None, email=None, fullname=None, passwd=None):
+        if username:
+            self.username = username
+        if email:
+            self.email = email
+        if fullname:
+            self.fullname = fullname
+        if passwd:
+            self.pwd_hash = hashlib.sha256(passwd.encode()).hexdigest()
+
+    def delete(self):
+        del User.user_objects[self.user_id]
+
+    def auth(self, plainpass):
+        return self.pwd_hash == hashlib.sha256(plainpass.encode()).hexdigest()
+
+    def login(self):
+        User.tok = str(uuid.uuid4())  # Generate a unique token
+        self.token = User.tok
+        return self.token
+
+    def checksession(self, token):
+        return token == self.token
+
+    def logout(self):
+        self.token = -1
+
+    @classmethod
+    def switchuser(cls, user_id):
+        if user_id in cls.user_objects:
+            return cls.user_objects[user_id]
+        else:
+            return None
+
+    @classmethod
+    def listusers(cls):
+        return [(user.user_id, user.username) for user in cls.user_objects.values()]
+
+        ### OBJECT ###
 class Object:
     id = -1
 
-    def __init__(self, name, type):
+    def __init__(self, user, type):
         Object.id += 1
 
-        self.name = name
+        self.user = user
         self.type = type
         self.id = Object.id
         
 
-        ###  PLAYER OBJECT ###
-
+        ### PLAYER OBJECT ###
 class Player(Object):
 
     def __init__(self, user, team, health, repo, map):
         super().__init__(user, "Player")
-        self.username = user
         self.team = team
         self.health = health
         self.repo = repo
@@ -34,7 +90,7 @@ class Player(Object):
             if(i < len(self.repo) - 1):
                 repo_str += "\n"
 
-        output = "Player: \nUsername: '" + self.username +  "'\nTeam: '" + self.team + "'\nHealth: " + str(self.health) + "\nRepository: " + repo_str 
+        output = "Player: \nUser: '" + str(self.user) +  "'\nTeam: '" + self.team + "'\nHealth: " + str(self.health) + "\nRepository: " + repo_str 
         return output
 
     def updatePositionOfPlayer(self, direction):
@@ -121,7 +177,7 @@ class Player(Object):
         self.competition()
 
         if (self.health <= 0):
-            self.map.leave(self.username, self.team)
+            self.map.leave(self.user, self.team)
 
     def competition(self):   #Will be implemented in next phases.
         return
@@ -151,28 +207,28 @@ class Player(Object):
                 elif min(self.map.height, y+5) == y+5:
                     nx = 0
                     ny = y+5
-                self.map.addHealthObject(nx, ny, drop_obj[1], drop_obj[2], drop_obj[3])
-                self.map.teams[self.team].addHealthObject(nx, ny, drop_obj[1], drop_obj[2], drop_obj[3])
+                self.map.addHealthObject(nx, ny, drop_obj[1], drop_obj[2])
+                self.map.teams[self.team].addHealthObject(nx, ny, drop_obj[1], drop_obj[2])
             if (drop_obj[0] == "Mine"):
-                self.map.addMineObject(x, y, drop_obj[1], drop_obj[2], drop_obj[3], drop_obj[4])
-                self.map.teams[self.team].addMineObject(x, y, drop_obj[1], drop_obj[2], drop_obj[3], drop_obj[4])
+                self.map.addMineObject(x, y, drop_obj[1], drop_obj[2], drop_obj[3])
+                self.map.teams[self.team].addMineObject(x, y, drop_obj[1], drop_obj[2], drop_obj[3])
             if (drop_obj[0] == "Freezer"):
-                self.map.addFreezerObject(x, y, drop_obj[1], drop_obj[2], drop_obj[3], drop_obj[4])
-                self.map.teams[self.team].addFreezerObject(x, y, drop_obj[1], drop_obj[2], drop_obj[3], drop_obj[4])
+                self.map.addFreezerObject(x, y, drop_obj[1], drop_obj[2], drop_obj[3])
+                self.map.teams[self.team].addFreezerObject(x, y, drop_obj[1], drop_obj[2], drop_obj[3])
         
         self.repo.remove(drop_obj)
 
+        
         ### MINE OBJECT ###
-
 class Mine(Object):
-    def __init__(self, name, p = 5, d = 10, k = 1000):
-        super().__init__(name, "Mine")
+    def __init__(self, p = 5, d = 10, k = 1000):
+        super().__init__("Mine", "Mine")
         self.prox = p
         self.dmg = d
         self.itr = k
 
     def __str__(self):
-        output = "Mine: " + "[Name: '" + self.name + "', Proximity: " + str(self.prox) + ", Damage: " + str(self.dmg) + ", Iteration: " + str(self.itr) + "]"
+        output = "Mine: " + "[Proximity: " + str(self.prox) + ", Damage: " + str(self.dmg) + ", Iteration: " + str(self.itr) + "]"
         return output
 
     def run(self, map):
@@ -193,16 +249,15 @@ class Mine(Object):
             
 
         ### FREEZER OBJECT ###
-
 class Freezer(Object):
-    def __init__(self, name, p = 5, d = 10, k = 1000):
-        super().__init__(name, "Freezer")
+    def __init__(self, p = 5, d = 10, k = 1000):
+        super().__init__("Freezer", "Freezer")
         self.prox = p
         self.stun = d
         self.itr = k
 
     def __str__(self):
-        output = "Freezer: " + "[Name: '" + self.name + "', Proximity: " + str(self.prox) + ", Damage: " + str(self.stun) + ", Iteration: " + str(self.itr) + "]"
+        output = "Freezer: " + "[Proximity: " + str(self.prox) + ", Damage: " + str(self.stun) + ", Iteration: " + str(self.itr) + "]"
         return output
     
     def run(self, map):
@@ -221,16 +276,16 @@ class Freezer(Object):
                 break
         map.removeObject(self.id)
 
+        
         ### HEALTH OBJECT ###
-
 class Health(Object):
-    def __init__(self, name, m = 30, inf = True):
-        super().__init__(name, "Health")
+    def __init__(self, m = 30, inf = True):
+        super().__init__("Freezer", "Health")
         self.health = m
         self.cap = inf
 
     def __str__(self):
-        output = "Health: " + "[Name: '" + self.name + "', Health Capacity: " + str(self.health) + ", Infinite: " + str(self.cap) + "]"
+        output = "Health: " + "[Health Capacity: " + str(self.health) + ", Infinite: " + str(self.cap) + "]"
         return output
     
     def run(self, map):
@@ -248,11 +303,7 @@ class Health(Object):
         map.removeObject(self.id)
 
 
-
-
-
-
-
+        ### MAP ###
 class Map:
     def __init__(self, name, size, config):
         self.name = name
@@ -307,43 +358,43 @@ class Map:
             if ('objects' in config):
                 self.objects_list = config['objects']
             
-    def addObject(self, name, type, x, y):
+    def addObject(self, type, x, y):
         if (type == "Health"):
-            healthObject = Health(name)
+            healthObject = Health()
             self.objects_list.append((x,y,healthObject))
             healthObject.run(self)
         if (type == "Mine"):
-            mineObject = Mine(name)
+            mineObject = Mine()
             self.objects_list.append((x,y,mineObject))
             mineObject.run(self)
         if (type == "Freezer"):
-            freezerObject = Freezer(name)
+            freezerObject = Freezer()
             self.objects_list.append((x,y,freezerObject))
             freezerObject.run(self)
 
-    def addHealthObject(self, x, y, name, health_val, inf):
-        healthObject = Health(name, health_val, inf)
+    def addHealthObject(self, x, y, health_val, inf):
+        healthObject = Health(health_val, inf)
         self.objects_list.append((x, y, healthObject))
         healthObject.run(self)
     
-    def addMineObject(self, x, y, name, p, d, k):
-        mineObject = Mine(name, p, d, k)
+    def addMineObject(self, x, y, p, d, k):
+        mineObject = Mine(p, d, k)
         self.objects_list.append((x, y, mineObject))
         mineObject.run(self)
 
-    def addFreezerObject(self, x, y, name, p, s, k):
-        freezerObject =  Freezer(name, p, s, k)
+    def addFreezerObject(self, x, y, p, s, k):
+        freezerObject =  Freezer(p, s, k)
         self.objects_list.append((x, y, freezerObject))
         freezerObject.run(self)
 
-    def addPlayerObject(self, x,y, p):
+    def addPlayerObject(self, x, y, p):
         self.objects_list.append((x, y, p))
     
     def removeObject(self, id):
         self.objects_list = [obj for obj in self.objects_list if obj[2].id != id]
 
     def listObjects(self):
-        return iter([(obj[2].id, obj[2].name, obj[2].type, obj[0], obj[1]) for obj in self.objects_list])
+        return iter([(obj[2].id, obj[2].user, obj[2].type, obj[0], obj[1]) for obj in self.objects_list])
     
     def getimage(self, x, y, r):
         r = self.player_vision if r == 0 else r
@@ -370,7 +421,7 @@ class Map:
     def join(self, player, team):
         
         for object in self.objects_list:
-            if(object[2].__class__.__name__ == 'Player' and object[2].username == player):
+            if(object[2].__class__.__name__ == 'Player' and object[2].user == player):
                 return None
 
         if (team not in self.teams):  
@@ -388,7 +439,7 @@ class Map:
 
     def leave(self, player, team):
         for object in self.objects_list:
-            if(object[2].__class__.__name__ == 'Player' and object[2].username == player and object[2].team == team):
+            if(object[2].__class__.__name__ == 'Player' and object[2].user == player and object[2].team == team):
                 self.removeObject(object[2].id)
         return
     
