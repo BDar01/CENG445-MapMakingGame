@@ -16,7 +16,7 @@ config1 = {"image":"BackgroundImage1.jpg",
            "objects": [(2, 3, mineObject), (10, 10, freezerObject)]
         }
 size1 = (612, 408)
-map1 = Map("Map1", size1, config1)
+map1 = MapFactory().new("Map1", size1, config1)
 print("Map 1 Created. Here it is:")
 print("Map 1 Line 1:", map1) #Map 1 Line 1, Here we can see that map 1 is instantiated properly.
 print(separator)
@@ -28,26 +28,26 @@ config2 = {"image":"BackgroundImage2.jpg",
            "objects": [(2, 3, mineObject2), (10, 10, freezerObject2)]
         }
 size2 = (256, 256)
-map2 = Map("Map2", size2, config2)
+map2 = MapFactory().new("Map2", size2, config2)
 print("Map 2 Created. Here it is:")
 print("Map 2 Line 1:", map2) #Map 2 Line 1, Here we can see that map 2 is instantiated properly.
 print(separator)
 
-user1 = User("U1", "u1@metu.edu.tr", "Baran", "pwd1")
+user1 = UserFactory().new("U1", "u1@metu.edu.tr", "Baran", "pwd1")
 
 player1 = map1.join(user1, "Red Team")
 print("Baran joined")
 print("Map 1 Line 2:", map1) #Map 1 Line 2, Here we can see that Player 1 is added to the objects of the map 1, which means the player properly joined the map.
 print(separator)
 
-user1b = User("U1b", "u1b@metu.edu.tr", "Dar", "pwd1b")
+user1b = UserFactory().new("U1b", "u1b@metu.edu.tr", "Dar", "pwd1b")
 
 player1b = map1.join(user1b, "Red Team")
 print("Dar joined")
 print("Map 1 Line 3:", map1) #Map 1 Line 3, Here we can see that Player 1b is added to the objects of the map 1, which means the player properly joined the map.
 print(separator)
 
-user2 = User("U2", "u2@metu.edu.tr", "Basim", "pwd2")
+user2 = UserFactory().new("U2", "u2@metu.edu.tr", "Basim", "pwd2")
 
 player2 = map2.join(user2, "Blue Team")
 print("Basim joined")

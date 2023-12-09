@@ -4,7 +4,39 @@ import time
 import hashlib
 import uuid
 
+def singleton(cls):
+    _instances = {}
+    def getinstance():
+        if cls not in _instances:
+            _instances[cls] = cls()
+        return _instances[cls]
+    return getinstance
+
+        ### OBJECT ###
+class Object:
+    id = -1
+
+    def __init__(self, user, type):
+        Object.id += 1
+
+        self.user = user
+        self.type = type
+        self.id = Object.id
+
         ### USER ###
+@singleton
+class UserFactory(object):
+    user_list = {}
+
+    def new(self, username, email, fullname, passwd):
+            user = User(username, email, fullname, passwd)
+            UserFactory().user_list[user.user_id] = user
+            return user
+        
+    def get(self, id):
+        return self.user_list[id]
+
+        
 class User:
     user_objects = {}
     tok = -1  
@@ -59,17 +91,6 @@ class User:
     @classmethod
     def listusers(cls):
         return [(user.user_id, user.username) for user in cls.user_objects.values()]
-
-        ### OBJECT ###
-class Object:
-    id = -1
-
-    def __init__(self, user, type):
-        Object.id += 1
-
-        self.user = user
-        self.type = type
-        self.id = Object.id
         
 
         ### PLAYER OBJECT ###
@@ -304,8 +325,25 @@ class Health(Object):
 
 
         ### MAP ###
+
+@singleton
+class MapFactory(object):
+    map_list = {}
+
+    def new(self, name, size, config):
+            map = Map(name, size, config)
+            MapFactory().map_list[map.map_id] = map
+            return map
+        
+    def get(self, id):
+        return self.map_list[id]
+    
 class Map:
+    id = -1
+
     def __init__(self, name, size, config):
+        Map.id += 1
+        self.map_id = Map.id
         self.name = name
         self.width, self.height = size
         self.bg_img = np.zeros((self.height,self.width,3), np.uint8)
@@ -335,7 +373,7 @@ class Map:
             if(i < len(self.player_repo) - 1):
                 repo_str += "\n"
         
-        output = "MAP\nName: " + self.name + "\nSize: (W: " + str(self.width) + ", H: " + str(self.height) + ")\nTeams On The Map:\n" + teams_str + "\nObjects In The Map:\n" + objects_str + "\nPlayer Vision: " + str(self.player_vision) + "\nPlayer Health: " + str(self.player_health) + "\nPlayer Repository:\n" + repo_str 
+        output = "MAP\nid: " + str(self.map_id) + "\nName: " + self.name + "\nSize: (W: " + str(self.width) + ", H: " + str(self.height) + ")\nTeams On The Map:\n" + teams_str + "\nObjects In The Map:\n" + objects_str + "\nPlayer Vision: " + str(self.player_vision) + "\nPlayer Health: " + str(self.player_health) + "\nPlayer Repository:\n" + repo_str 
         return output
     
     def initializeObjects(self):
