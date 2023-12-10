@@ -5,6 +5,9 @@ import struct
 import hashlib
 import sqlite3
 import argparse
+import signal
+import sys
+import os
 from game import *
 
 class GameServer:
@@ -15,29 +18,72 @@ class GameServer:
         self.games = {}  # Store game instances
         self.user_sockets = {}  # Store user sockets for notifications
         self.notification_queues = {}  # Store notification queues for each user
-        self.config_templates = self.load_config_templates() # Load configuration templates from a file (config.json)
+        self.port = port
+        # Register the signal handler for CTRL+C
+        signal.signal(signal.SIGINT, self.signal_handler)
+        #self.config_templates = self.load_config_templates() # Load configuration templates from a file (config.json) - NOT IMPLEMENTED YET
     
-    def load_config_templates(self):
+    '''def load_config_templates(self):
         # Load configuration templates from a file (config.json)
         with open('config.json', 'r') as file:
             config_data = json.load(file)
         return config_data
+    '''
 
+    def signal_handler(self, signal, frame):
+        print("Received Ctrl+C. Closing connection...")
+        self.close()
+        sys.exit(0)
+    
     def authenticate_user(self, username, password):
-        with sqlite3.connect('project.sql3') as db:
-            c = db.cursor()
-            row = c.execute('SELECT * FROM users WHERE username=?', (username,)).fetchone()
+        db_exists = os.path.isfile('project.sql3')
 
-        if row and hashlib.sha256(password.encode()).hexdigest() == row[1]:
+        with sqlite3.connect('project.sql3') as db: 
+            c = db.cursor()
+
+            if not db_exists:
+                c.execute('''
+                    CREATE TABLE IF NOT EXISTS users (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        username TEXT NOT NULL,
+                        password TEXT NOT NULL
+                    )
+                ''')
+                db.commit()
+
+            try:
+                c.execute('SELECT * FROM users WHERE username=?', (username,))
+                row = c.fetchone()
+            except sqlite3.Error as e:
+                print(f"Error executing SQL query: {e}")
+                row = None
+
+        if row and hashlib.sha256(password.encode()).hexdigest() == row[2]:
             return True
         return False
 
+
     def add_user(self, username, password):
         hashed_password = hashlib.sha256(password.encode()).hexdigest()
+
         with sqlite3.connect('project.sql3') as db:
             c = db.cursor()
-            c.execute("INSERT INTO users (username, password) VALUES (?, ?)", (username, hashed_password))
-            db.commit()
+
+            try:
+                c.execute('''
+                    CREATE TABLE IF NOT EXISTS users (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        username TEXT NOT NULL,
+                        password TEXT NOT NULL
+                    )
+                ''')
+
+                c.execute("INSERT INTO users (username, password) VALUES (?, ?)", (username, hashed_password))
+                db.commit()
+
+            except sqlite3.Error as e:
+                print(f"Error executing SQL query: {e}")
+
 
     def handle_game_command(self, user, command, params):
         try:
@@ -104,6 +150,10 @@ class GameServer:
                 else:
                     return f"Map {map_id} not found"
 
+            elif command == "notify":
+                message = " ".join(params)
+                self.send_notification(user, message)
+
             elif command == "save_state":
                 self.save_state(user)
 
@@ -127,49 +177,50 @@ class GameServer:
         authenticated_user = None
         notification_queue = []
 
-        while not authenticated_user:
-            data = client_socket.recv(1024).decode()
-            if not data:
-                break
-            command, *params = data.split()
-            if command == "login":
-                username, password = params
-                if self.authenticate_user(username, password):
-                    authenticated_user = username
-                    self.user_sockets[authenticated_user] = client_socket
-                    self.notification_queues[authenticated_user] = notification_queue
-                    client_socket.send("OK".encode())
+        try:
+            while not authenticated_user:
+                data = client_socket.recv(1024).decode()
+                if not data:
+                    break
+                command, *params = data.split()
+                if command == "login":
+                    username, password = params
+                    if self.authenticate_user(username, password):
+                        authenticated_user = username
+                        self.user_sockets[authenticated_user] = client_socket
+                        self.notification_queues[authenticated_user] = notification_queue
+                        client_socket.send("OK".encode())
+                    else:
+                        client_socket.send("Authentication failed".encode())
+                elif command == "adduser":
+                    username, password = params
+                    self.add_user(username, password)
+                    client_socket.send("User added successfully. Please login.".encode())
                 else:
-                    client_socket.send("Authentication failed".encode())
-            elif command == "adduser":
-                username, password = params
-                self.add_user(username, password)
-                client_socket.send("User added successfully. Please login.".encode())
-            else:
-                client_socket.send("Authentication required".encode())
+                    client_socket.send("Authentication required".encode())
 
-        # Main command loop
-        while True:
-            data = client_socket.recv(1024).decode()
-            if not data:
-                break
+            # Main command loop
+            while True:
+                data = client_socket.recv(1024).decode()
+                if not data:
+                    break
 
-            command, *params = data.split()
+                command, *params = data.split()
 
-            if command == "notify":
-                self.send_notification(authenticated_user, " ".join(params))
+                response = self.handle_game_command(authenticated_user, command, params)
 
-            response = self.handle_game_command(authenticated_user, command, params)
+                client_socket.send(response.encode())
 
-            client_socket.send(response.encode())
-
-        client_socket.close()
+        except ConnectionResetError:
+            print("Client disconnected unexpectedly.")
+        finally:
+            client_socket.close()
 
     def start_server(self):
         print(f"Server listening on port {self.port}...")
         while True:
             client_socket, addr = self.server.accept()
-            client_handler = threading.Thread(target=self.handle_client, args=(client_socket,))
+            client_handler = threading.Thread(target=self.handle_client, args=(client_socket,), daemon=True)
             client_handler.start()
 
     def save_state(self, user):
