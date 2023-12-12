@@ -4,13 +4,7 @@ import time
 import hashlib
 import uuid
 
-def singleton(cls):
-    _instances = {}
-    def getinstance():
-        if cls not in _instances:
-            _instances[cls] = cls()
-        return _instances[cls]
-    return getinstance
+
 
         ### OBJECT ###
 class Object:
@@ -24,19 +18,6 @@ class Object:
         self.id = Object.id
 
         ### USER ###
-@singleton
-class UserFactory(object):
-    user_list = {}
-
-    def new(self, username, email, fullname, passwd):
-            user = User(username, email, fullname, passwd)
-            UserFactory().user_list[user.user_id] = user
-            return user
-        
-    def get(self, id):
-        return self.user_list[id]
-
-        
 class User:
     user_objects = {}
     tok = -1  
@@ -325,18 +306,6 @@ class Health(Object):
 
 
         ### MAP ###
-
-@singleton
-class MapFactory(object):
-    map_list = {}
-
-    def new(self, name, size, config):
-            map = Map(name, size, config)
-            MapFactory().map_list[map.map_id] = map
-            return map
-        
-    def get(self, id):
-        return self.map_list[id]
     
 class Map:
     id = -1

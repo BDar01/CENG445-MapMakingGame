@@ -1,34 +1,20 @@
 from game import *
+import config
 
 separator = "****************"
 
-mineObject = Mine(7, 30, 1000) 
-mineObject2 = Mine(10, 50, 800) 
+
 #healthObject = Health("Health1", 20, False) If we add this object, since we didn't implement the threads functionality, it will run forever and the program won't work.
 #healthObject2 = Health("Health2", 20, True) If we add this object, since we didn't implement the threads functionality, it will run forever and the program won't work.
-freezerObject = Freezer(5, 4, 1000)
-freezerObject2 = Freezer(3, 6, 500)
 
-config1 = {"image":"BackgroundImage1.jpg", 
-           "playervision": 10, 
-           "playerh": 100, 
-           "playerrepo": [("Mine", 3, 20, 1000), ("Freezer", 1, 5, 10000)], 
-           "objects": [(2, 3, mineObject), (10, 10, freezerObject)]
-        }
 size1 = (612, 408)
-map1 = MapFactory().new("Map1", size1, config1)
+map1 = MapFactory().new("Map1", size1, config.MAPS["arena"])
 print("Map 1 Created. Here it is:")
 print("Map 1 Line 1:", map1) #Map 1 Line 1, Here we can see that map 1 is instantiated properly.
 print(separator)
 
-config2 = {"image":"BackgroundImage2.jpg", 
-           "playervision": 8, 
-           "playerh": 120, 
-           "playerrepo": [("Mine", 6, 25, 1000), ("Freezer", 10, 3, 5000)], 
-           "objects": [(2, 3, mineObject2), (10, 10, freezerObject2)]
-        }
 size2 = (256, 256)
-map2 = MapFactory().new("Map2", size2, config2)
+map2 = MapFactory().new("Map2", size2, config.MAPS["labyrinth"])
 print("Map 2 Created. Here it is:")
 print("Map 2 Line 1:", map2) #Map 2 Line 1, Here we can see that map 2 is instantiated properly.
 print(separator)
@@ -48,6 +34,8 @@ print("Map 1 Line 3:", map1) #Map 1 Line 3, Here we can see that Player 1b is ad
 print(separator)
 
 user2 = UserFactory().new("U2", "u2@metu.edu.tr", "Basim", "pwd2")
+
+print(UserFactory().user_list)
 
 player2 = map2.join(user2, "Blue Team")
 print("Basim joined")
