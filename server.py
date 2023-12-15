@@ -14,8 +14,13 @@ import config
 from singleton import UserFactory
 from singleton import MapFactory
 
+thread_local = threading.local()
 
-
+def get_key_by_value(dictionary, target_value):
+    for key, value in dictionary.items():
+        if value.username == target_value:
+            return key, value
+            
 class GameServer:
     def __init__(self, port):
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -30,7 +35,7 @@ class GameServer:
         # Register the signal handler for CTRL+C
         signal.signal(signal.SIGINT, self.signal_handler)
         #self.config_templates = self.load_config_templates() # Load configuration templates from a file (config.json) - NOT IMPLEMENTED YET
-    
+        self.load_state()
     '''def load_config_templates(self):
         # Load configuration templates from a file (config.json)
         with open('config.json', 'r') as file:
@@ -38,19 +43,19 @@ class GameServer:
         return config_data
     '''
 
-
-
+    
     def signal_handler(self, signal, frame):
         print("Received Ctrl+C. Closing connection...")
+        self.save_state()
         self.shutdown_flag.set()
         self.server.close()
         sys.exit(0)
     
     def authenticate_user(self, username, password):
         hashed_password = hashlib.sha256(password.encode()).hexdigest()
-        db_exists = os.path.isfile('project.sql3')
+        db_exists = os.path.isfile('server.sql3')
 
-        with sqlite3.connect('project.sql3') as db: 
+        with sqlite3.connect('server.sql3') as db: 
             c = db.cursor()
 
             if not db_exists:
@@ -72,14 +77,14 @@ class GameServer:
                 print(f"Error executing SQL query: {e}")
                 row = None
 
-        if row and hashlib.sha256(password.encode()).hexdigest() == row[2]:
+        if row and hashed_password == row[2]:
             return True
         return False
 
 
     def register_user(self, username, email, fullname, password):
         hashed_password = hashlib.sha256(password.encode()).hexdigest()
-        with sqlite3.connect('project.sql3') as db:
+        with sqlite3.connect('server.sql3') as db:
             c = db.cursor()
 
             try:
@@ -99,7 +104,9 @@ class GameServer:
             except sqlite3.Error as e:
                 print(f"Error executing SQL query: {e}")
 
-        
+       
+    def serialize_user(self, user):
+        return {"user_id":  user.user_id, "username": user.username, "email": user.email, "fullname": user.fullname, "pwd_hash": user.pwd_hash, "token": user.token}
 
     def serialize_mine(self, object):
         return {"Proximity": object.prox, "Damage": object.dmg, "Lifetime": object.itr}
@@ -112,7 +119,7 @@ class GameServer:
 
         
     def serialize_config(self, config):
-        serialized_config = []
+        serialized_config = {}
         for key, value in config.items():
             if key == "objects":
                 objects = value
@@ -125,97 +132,100 @@ class GameServer:
                     elif isinstance(object[2], Health):
                         serialized_objects.append([object[0], object[1],self.serialize_health(object[2])])
 
-                serialized_config.append({key : serialized_objects})
+                serialized_config[key] = serialized_objects
 
             else:
-                serialized_config.append({key : value})
+                serialized_config[key] = value
 
 
         return serialized_config
             
     
-    def handle_game_command(self, user, command, params):
+    def handle_game_command(self, user, data):
         try:
-            if command == "listusers":
-                print(UserFactory.user_list.items())
-                return json.dumps([(user_id, user.username, user.email, user.fullname) for user_id, user in UserFactory.user_list.items()])
+            if data['command'] == "listusers":
+                return json.dumps({"Message":[({"user_id": user_id, "username": user.username, "email": user.email, "fullname": user.fullname}) for user_id, user in UserFactory().user_list.items()]})
 
-            elif command == "newplayer":
-                if len(params) != 4:
-                    raise ValueError("Invalid number of parameters for newplayer command")
-                username, email, fullname, passwd = params
-                hashed_password = hashlib.sha256(passwd.encode()).hexdigest()
-                user = UserFactory.new(username, email, fullname, hashed_password)
-                return f"Player {username} created with ID: {user.user_id}"
-
-            elif command == "move":
-                if len(params) != 2:
+            elif data['command'] == "move":
+                if len(data.items()) != 3:
                     raise ValueError("Invalid number of parameters for move command")
-                user_id, direction = params
-                user = UserFactory.getUser(user_id)
-                player = user.get_player()
+                user_id, direction = data['user_id'], data['direction']
+                user = UserFactory().user_list[user_id]
+                player = user.player
                 player.move(direction)
-                return f"Player {user.username} moved {direction}"
+                return json.dumps({"Message": f"Player {user.username} moved {direction}"})
 
-            elif command == "drop":
-                if len(params) != 2:
+            elif data['command'] == "drop":
+                if len(data.items()) != 3:
                     raise ValueError("Invalid number of parameters for drop command")
-                user_id, object_type = params
-                user = UserFactory.getUser(user_id)
-                player = user.get_player()
+                user_id, object_type = data['user_id'], data['object_type']
+                user = UserFactory().user_list[user_id]
+                player = user.player
                 player.drop(object_type)
-                return f"Player {user.username} dropped {object_type}"
+                return json.dumps({"Message": f"Player {user.username} dropped {object_type}"})
 
-            elif command == "querymap":
-                if len(params) != 4:
+            elif data['command'] == "querymap":
+                if len(data.items()) != 5:
                     raise ValueError("Invalid number of parameters for querymap command")
-                user_id, x, y, radius = params
-                user = UserFactory.getUser(user_id)
-                player = user.get_player()
+                user_id, x, y, radius = data['user_id'], data['x'], data['y'], data['radius']
+                user = UserFactory().user_list[user_id]
+                player = user.player
                 objects_in_radius = player.map.query(int(x), int(y), int(radius))
-                return json.dumps([(obj[2].id, obj[2].type, obj[0], obj[1]) for obj in objects_in_radius])
+                return json.dumps({"Message":[(obj[2].id, obj[2].type, obj[0], obj[1]) for obj in objects_in_radius]})
 
-            elif command == "newmap":
-                if len(params) != 3:
+            elif data['command'] == "newmap":
+                if len(data.items()) != 4:
                     raise ValueError("Invalid number of parameters for newmap command")
-                map_name, map_size, config_template = params
+                map_name, map_size, config_template = data['map_name'], data['map_size'], data['config_template']
                 map_size = tuple(map(int, map_size.split('x')))
-                new_map = MapFactory.new(map_name, map_size, config.MAPS[config_template])
-                self.games[new_map.map_id] = new_map
-                return f"Map {new_map.name} created with ID: {new_map.map_id}"
+                new_map = MapFactory().new(map_name, map_size, config.MAPS[config_template])
+                return json.dumps({"Message": f"Map {new_map.name} created with ID: {new_map.map_id}"})
 
-            elif command == "listmaps":
-                return json.dumps([(map_id, game_map.name, (game_map.width, game_map.height), self.serialize_config(game_map.config)) for map_id, game_map in MapFactory().map_list.items()])
+            elif data['command'] == "listmaps":
+                if len(MapFactory().map_list.items()) == 0:
+                    return json.dumps({"Message": "No map found."})
+                return json.dumps({"Message": [({"map_id": map_id, "map_name": game_map.name, "map_size": (game_map.width, game_map.height),"map_teams": list(game_map.teams.keys()), "map_config": self.serialize_config(game_map.config)}) for map_id, game_map in MapFactory().map_list.items()]})
 
-            elif command == "joinmap":
-                if len(params) != 3:
+            elif data['command'] == "joinmap":
+                if len(data.items()) != 4:
                     raise ValueError("Invalid number of parameters for joinmap command")
-                user_id, map_id, team_id = params
-                user = UserFactory.getUser(user_id)
-                player = user.get_player()
-                game_map = self.games.get(int(map_id))
-                if game_map:
-                    game_map.join(player, player.team)
-                    return f"Player {user} joined map {game_map.name}"
+                user_id, map_id, teamname = data['user_id'], int(data['map_id']), data['teamname']
+
+                user = UserFactory().user_list[user_id]
+                if map_id in list(MapFactory().map_list.keys()):
+                    my_map = MapFactory().map_list[map_id]
+                    p = my_map.join(user.username, teamname)
+                    if(p == None):
+                        return json.dumps({"Message":"User already exists in the map."})
+                    else:
+                        user.player = p
+                        return json.dumps({"Message": f"User '{user.username}' (Team member of {teamname}) joined to '{my_map.name}'."})
+
                 else:
-                    return f"Map {map_id} not found"
+                    return json.dumps({"Message": f"Map {map_id} not found"})
 
-            elif command == "notify":
-                message = " ".join(params)
-                self.send_notification(user, message)
+            #elif data['command'] == "notify":
+            #    message = " ".join(params)
+            #    self.send_notification(user, message)
 
-            elif command == "save_state":
-                self.save_state(user)
-                return f"State saved."
 
-            elif command == "load_state":
-                self.load_state(user)
+            elif data['command'] == "LO":
+                user_id = data["user_id"]
+                UserFactory().user_list[user_id].logout()
+                thread_local.authenticated_user = None
+                response = json.dumps({"Message": "Logged out"})
+                return response
+
+            elif data['command'] == "E":
+                thread_local.is_connected = False
+                response = json.dumps({"Message": "Exit"})
+                return response
 
             else:
-                return "Invalid command"
+                return json.dumps({"Message": "Invalid command. Try again."})
 
         except Exception as e:
-            return f"Error: {str(e)}"
+            return json.dumps({"Message": f"Error: {str(e)}"})
 
     def send_notification(self, user, message):
         if user in self.user_sockets:
@@ -225,57 +235,99 @@ class GameServer:
             user_socket.send(f"NOTIFY {message}".encode())
 
     def handle_client(self, client_socket):
-        authenticated_user = None
         notification_queue = []
 
+        thread_local.is_connected = True
+        thread_local.authenticated_user = None
+
         try:
-            while not authenticated_user and not self.shutdown_flag.is_set():
-                try:
-                    client_socket.settimeout(1.0)
-                    data = json.loads(client_socket.recv(1024).decode())
-                    if data:
-                        command = data["command"]
-                        if command == "L":
-                            username = data["username"]
-                            password = data["password"]
+            while thread_local.is_connected:
+                if not thread_local.authenticated_user and not self.shutdown_flag.is_set():
+                    try:
+                        client_socket.settimeout(1.0)
+                        data = json.loads(client_socket.recv(1024).decode())
+                        if data:
+                            command = data["command"]
+                            if command == "L":
+                                username = data["username"]
+                                password = data["password"]
 
-                            if self.authenticate_user(username, password):
-                                authenticated_user = username
-                                self.user_sockets[authenticated_user] = client_socket
-                                self.notification_queues[authenticated_user] = notification_queue
-                                client_socket.send("OK".encode())
+                                if self.authenticate_user(username, password):
+                                    thread_local.authenticated_user = username
+                                    self.user_sockets[thread_local.authenticated_user] = client_socket
+                                    self.notification_queues[thread_local.authenticated_user] = notification_queue
+                                    user_id, user = get_key_by_value(UserFactory().user_list, username)
+                                    token = user.login()
+                                    response = json.dumps({'Message' : "Logged in", 'user_id': user_id, 'token': token})
+                                    client_socket.send(response.encode())
+                                else:
+                                    client_socket.send("Authentication failed".encode())
+
+                            elif command == "R":
+                                username = data["username"]
+                                password = data["password"]
+                                email = data["email"]
+                                fullname = data["fullname"] 
+
+                                if(get_key_by_value(UserFactory().user_list, username)):
+                                    response = json.dumps({'Message': "Username exists. Please try for another username."})
+                                    client_socket.send(response.encode())                                    
+                                else:
+                                    self.register_user(username, email, fullname, password)
+                                    user = UserFactory().new(username, email, fullname, password)
+                                    response = json.dumps({'Message' : "User added successfully. Please login."})
+                                    client_socket.send(response.encode())
+
+                            elif command == "C":
+                                user_id = data["user_id"]
+                                token = data["token"]
+
+                                if (UserFactory().user_list[user_id].checksession(token)):
+
+                                    response = json.dumps({'Message' : "Logged in", 'user_id': user_id, 'token': token})
+
+                                    thread_local.authenticated_user = UserFactory().user_list[user_id].username
+
+                                    self.user_sockets[thread_local.authenticated_user] = client_socket
+
+                                    client_socket.send(response.encode())  
+
+                                
+                                else:
+                                    response = json.dumps({'Message': "Authentication Failed."})
+                                    client_socket.send(response.encode())  
+
+                            elif command == "E":
+                                thread_local.is_connected = False
+                                response = json.dumps({'Message' : "Exit"})
+                                client_socket.send(response.encode())
+
                             else:
-                                client_socket.send("Authentication failed".encode())
+                                response = json.dumps({'Message' : "Invalid command. Try again."})
+                                client_socket.send(response.encode())
 
-                        elif command == "R":
-                            username = data["username"]
-                            password = data["password"]
-                            email = data["email"]
-                            fullname = data["fullname"] 
+                    except socket.timeout:
+                        if self.shutdown_flag.is_set():
+                            break
 
-                            self.register_user(username, email, fullname, password)
-                            client_socket.send("User added successfully. Please login.".encode())
-                        else:
-                            client_socket.send("Authentication required".encode())
+                    except Exception as e:
+                        print(f"Error: {e}")
 
-                except socket.timeout:
-                    if self.shutdown_flag.is_set():
-                        break
+                if thread_local.authenticated_user and not self.shutdown_flag.is_set():
+                    try:
+                        client_socket.settimeout(1.0)
+                        response = client_socket.recv(1024).decode()
+                        data = json.loads(response)
+            
+                        if data:
 
-            # Main command loop
-            while not self.shutdown_flag.is_set():
-                try:
-                    data = client_socket.recv(1024).decode()
-                    if data:
-                        command, *params = data.split()
+                            response = self.handle_game_command(thread_local.authenticated_user, data)
 
-                        response = self.handle_game_command(authenticated_user, command, params)
+                            client_socket.send(response.encode())
 
-                        client_socket.send(response.encode())
-
-                except socket.timeout:
-                    if self.shutdown_flag.is_set():
-                        break
+                    except socket.timeout:
+                        if self.shutdown_flag.is_set():
+                            break
 
         except ConnectionResetError:
             print("Client disconnected unexpectedly.")
@@ -294,40 +346,58 @@ class GameServer:
                  if self.shutdown_flag.is_set():
                     break
 
-    def save_state(self, user):
+    def save_state(self):
+        #Save the user_list
         state_data = {
-            'users': UserFactory.user_list,
-            'maps':  json.dumps([(map_id, game_map.name, (game_map.width, game_map.height), self.serialize_config(game_map.config)) for map_id, game_map in MapFactory().map_list.items()]),
+            'users': json.dumps([self.serialize_user(user) for _, user in UserFactory().user_list.items()]),
+            'maps':  json.dumps([(map_id, game_map.name, (game_map.width, game_map.height), {"teams": list(game_map.teams.keys())}, self.serialize_config(game_map.config)) for map_id, game_map in MapFactory().map_list.items()]),
             'games': json.dumps([(map_id, map.name, (map.width, map.height), self.serialize_config(map.config)) for map_id, map in self.games.items()])
         }
 
-        with open(f"{user}_state.json", 'w') as file:
+        with open("server_state.json", 'w') as file:
             json.dump(state_data, file)
 
-    def load_state(self, user):
+    def load_state(self):
+        ##Loads the user_list
         try:
-            with open(f"{user}_state.json", 'r') as file:
+            with open("server_state.json", 'r') as file:
                 state_data = json.load(file)
 
                 # Restore user list
-                for user_id, user_data in state_data.get('users', {}).items():
-                    UserFactory.load(int(user_id), user_data['username'], user_data['email'], user_data['fullname'])
-
+                user_list = json.loads(state_data['users'])
+                for user in user_list:
+                    user_id, username, email, fullname, pwd_hash, token = user['user_id'], user['username'], user['email'], user['fullname'], user['pwd_hash'], user['token']
+                    UserFactory().new_from_load(user_id, username, email, fullname, pwd_hash, token)
+                    
+                map_list = json.loads(state_data['maps'])
                 # Restore map list
-                for map_id, map_data in state_data.get('maps', {}).items():
-                    UserFactory.load(int(map_id), map_data['name'], map_data['size'], map_data['config'])
-
-                # Restore game instances
-                self.games = state_data.get('games', {})
-
-            self.send_notification(user, "State loaded successfully")
+                for map in map_list:
+                    map_id = map[0]
+                    map_name = map[1]
+                    [map_width, map_height] = map[2]
+                    map_teams = map[3]
+                    map_config = map[4]
+                    objects = map_config['objects']
+                    for i in objects:
+                        object_dict = i[2]
+                        keys = list(object_dict.keys())
+                        if("Damage" in keys):
+                            mine = Mine(object_dict['Proximity'], object_dict['Damage'], object_dict['Lifetime'])
+                            i[2] = mine
+                        elif("Stun" in keys):
+                            freezer = Freezer(object_dict['Proximity'], object_dict['Stun'], object_dict['Lifetime'])
+                            i[2] = freezer
+                        elif("Health" in keys):
+                            health = Health(object_dict['Health'], object_dict['Lifetime'])
+                            i[2] = health
+                    
+                    MapFactory().new_from_load(map_name, (map_width, map_height), map_config, map_id)
+                    
 
         except FileNotFoundError:
-            self.send_notification(user, "No saved state found for the user")
-
+            pass
         except Exception as e:
-            self.send_notification(user, f"Error loading state: {str(e)}")        
-
+            pass
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Game Server')
     parser.add_argument('--port', type=int, default=1423, help='Port number to listen on')

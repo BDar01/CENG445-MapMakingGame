@@ -2,8 +2,13 @@ import socket
 import signal
 import sys
 import json
+import sqlite3
 
 from singleton import UserFactory, MapFactory
+
+def table_exists(cursor, table_name):
+    cursor.execute(f"SELECT name FROM sqlite_master WHERE type='table' AND name='{table_name}'")
+    return cursor.fetchone() is not None
 
 class GameClient:
     def __init__(self, host, port):
@@ -17,7 +22,41 @@ class GameClient:
             self.client_socket.close()
         # Register the signal handler for CTRL+C
         signal.signal(signal.SIGINT, self.signal_handler)
-        self.user = None
+        self.user_id = ""
+        self.token = -1
+        self.load_token()
+
+    def save_token(self, user_id, token):
+        with sqlite3.connect('client.sql3') as db:
+            c = db.cursor()
+
+            try:
+                c.execute('''
+                    DROP TABLE IF EXISTS tokens 
+                ''')
+                c.execute('''
+                    CREATE TABLE tokens (
+                        user_id TEXT PRIMARY KEY NULL,
+                        token TEXT NOT NULL
+                    )
+                ''')
+
+                c.execute("INSERT INTO tokens (user_id, token) VALUES (?, ?)", (user_id, token))
+                db.commit()
+
+            except sqlite3.Error as e:
+                print(f"Error executing SQL query: {e}")
+
+    def load_token(self):
+         with sqlite3.connect('client.sql3') as db: 
+            c = db.cursor()
+
+            if table_exists(c, "tokens"):
+                c.execute('SELECT user_id, token FROM tokens')
+                row = c.fetchone()
+
+                self.user_id = row[0]
+                self.token = row[1]
 
     def send_command(self, command):
         self.client_socket.send(command.encode())
@@ -28,6 +67,9 @@ class GameClient:
         self.client_socket.close()
 
     def signal_handler(self, signal, frame):
+        command = {}
+        command["command"] = "E"
+        self.send_command(json.dumps(command))
         print("Received Ctrl+C. Closing connection...")
         self.close()
         sys.exit(0)
@@ -44,11 +86,18 @@ if __name__ == "__main__":
     try:
         peername = client.client_socket.getpeername()
         print(f"Connected to {peername}.")
+        if client.token != -1:
+            response = json.loads(client.send_command(json.dumps({'command': "C", 'user_id': client.user_id, 'token': client.token })))
+            if response["Message"] == "Logged in":
+                client.logged_in = True
+                print(response["Message"])
+            else:
+                client.token = -1
+
         while True:
+            command = {}
             if not client.logged_in:
-                print("here")
-                command = {}
-                user_input = input("Register(R), Login(L) or Exit(E): ")
+                user_input = input("Register(R), Login(L) and Exit(E): ")
                 command["command"] = user_input
                 if user_input == "R":
                     username = input("Username: ")
@@ -68,24 +117,122 @@ if __name__ == "__main__":
                     command["username"] = username
                     command["password"] =  password
 
-                elif user_input == "E":
-                    break
-                response = client.send_command(json.dumps(command))
-                print(response)
-                if response == "OK":
-                    client.logged_in = True
-                elif response == "User added successfully. Please login.":
-                    client.user = UserFactory().new(username, email, fullname, password)
-                    print(UserFactory().user_list.items())
-            else:
-                user_input = input("Enter a command (Exit(E)): ")
-                if user_input == "E":
-                    break
-                else:
-                    print(UserFactory().user_list.items())
-                    response = client.send_command(user_input)
-                    print(response)
 
+                elif user_input == "E":
+                    pass
+
+
+
+                response = json.loads(client.send_command(json.dumps(command)))
+
+                print(response["Message"])
+
+                if response['Message'] == "Logged in":
+                    client.logged_in = True
+                    client.token = response['token']
+                    client.user_id = response['user_id']
+                    client.save_token(client.user_id, client.token)
+
+                elif response['Message'] == "Exit":
+                    break
+
+                elif response['Message'] == "Username exists. Please try for another username.":
+                    continue
+                
+
+            else:
+                user_input = input("Enter a command (Logout (LO) or Exit(E)): ")
+                response = ""
+                
+                if user_input == "E":
+                    command["command"] = user_input
+                    response = json.loads(client.send_command(json.dumps(command)))
+                    print(response["Message"])
+                    
+
+                elif user_input == "LO":
+                    command["command"] = user_input
+                    command["user_id"] = client.user_id
+                    response = json.loads(client.send_command(json.dumps(command)))
+                    print(response["Message"])
+
+
+                elif user_input.find("newmap") != -1:
+                    c = user_input.split()
+                    if len(c) == 4:
+                        command["command"], command["map_name"], command["map_size"], command["config_template"] = c[0], c[1], c[2], c[3] 
+                        response = json.loads(client.send_command(json.dumps(command)))
+                        print(response["Message"])
+
+                    else:
+                        print("Invalid argument count. Try again.")
+
+                elif user_input.find("joinmap") != -1:
+                    c = user_input.split()
+                    if len(c) == 3:
+                        command["command"], command["user_id"], command["map_id"], command["teamname"] = c[0], client.user_id, c[1], c[2] 
+                        response = json.loads(client.send_command(json.dumps(command)))
+                        print(response["Message"])
+
+                    else:
+                        print("Invalid argument count. Try again.")
+
+                elif user_input.find("listusers") != -1:
+                    c = user_input.split()
+
+                    if len(c) == 1:
+                        command["command"] = c[0]
+                        response = json.loads(client.send_command(json.dumps(command)))
+                        print(response["Message"])
+                    else:
+                        print("No arguments required for this command. Please try again.")
+
+                elif user_input.find("listmaps") != -1:
+                    c = user_input.split()
+
+                    if len(c) == 1:
+                        command["command"] = c[0]
+                        response = json.loads(client.send_command(json.dumps(command)))
+                        print(response["Message"])
+                    else:
+                        print("No arguments required for this command. Please try again.")
+                
+                elif user_input.find("move") != -1:
+                    c = user_input.split()
+
+                    if len(c) == 2:
+                        command["command"], command["user_id"], command["direction"] = c[0], client.user_id, c[1]
+                        response = json.loads(client.send_command(json.dumps(command)))
+                        print(response["Message"])
+                    
+                    else: 
+                        print("Invalid number of arguments. Try again.")
+
+                elif user_input.find("drop") != -1:
+                    c = user_input.split()
+
+                    if len(c) == 2:
+                        command["command"], command["user_id"], command["direction"] = c[0], client.user_id, c[1]
+                        response = json.loads(client.send_command(json.dumps(command)))
+                        print(response["Message"])
+                    else:
+                        print("Invalid number of arguments. Try again.")
+
+                else:
+                    c = user_input.split()
+                    command["command"] = c[0]
+                    response = json.loads(client.send_command(json.dumps(command)))
+                    print(response["Message"])
+
+                if response:
+                    if response["Message"] == "Logged out":
+                        client.token = -1
+                        client.logged_in = False
+                        
+                    elif response["Message"] == "Exit":
+                        break
+    
+                
     except KeyboardInterrupt:
         pass
     except socket.error as e:

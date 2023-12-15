@@ -19,8 +19,6 @@ class Object:
 
         ### USER ###
 class User:
-    user_objects = {}
-    tok = -1  
 
     def __init__(self, username, email, fullname, passwd):
         self.user_id = str(uuid.uuid4())
@@ -29,8 +27,8 @@ class User:
         self.fullname = fullname
         self.pwd_hash = hashlib.sha256(passwd.encode()).hexdigest()
         self.token = -1
+        self.player = None
     
-        User.user_objects[self.user_id] = self
 
     def __str__(self):
         return f"User ID: {self.user_id}\nUsername: {self.username}\nEmail: {self.email}\nFull name: {self.fullname}"
@@ -52,12 +50,11 @@ class User:
         return self.pwd_hash == hashlib.sha256(plainpass.encode()).hexdigest()
 
     def login(self):
-        User.tok = str(uuid.uuid4())  # Generate a unique token
-        self.token = User.tok
+        self.token = str(uuid.uuid4()) # Generate a unique token
         return self.token
 
     def checksession(self, token):
-        return token == self.token
+        return token == self.token and token != -1
 
     def logout(self):
         self.token = -1
@@ -135,7 +132,6 @@ class Player(Object):
             for i, tpl in enumerate(objects_list):
                 if (tpl[2].id == self.id):
                     objects_list[i] = (min(self.map.width, tpl[0] + 1), tpl[1], tpl[2])
-            print(self.map.teams[self.team])
             for i, tpl in enumerate(team_view_object_list):
                 if (tpl[2].id == self.id):
                     team_view_object_list[i] = (min(self.map.width, tpl[0] + 1), tpl[1], tpl[2])
@@ -323,7 +319,7 @@ class Map:
         self.player_repo = []
         self.config = config
         self.parse_config(config)
-        self.initializeObjects()
+        #self.initializeObjects()
 
     def __str__(self):
         teams_str = "\n".join(self.teams) 
@@ -426,9 +422,8 @@ class Map:
         return new_objects_list
     
     def join(self, player, team):
-        
         for object in self.objects_list:
-            if(object[2].__class__.__name__ == 'Player' and object[2].user == player):
+            if(object[2].__class__.__name__ == 'Player' and object[2].user == player): #If this function returns none player exists in the map
                 return None
 
         if (team not in self.teams):  
