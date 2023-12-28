@@ -3,7 +3,7 @@ import signal
 import sys
 import json
 import sqlite3
-import selectors
+import threading
 
 from singleton import UserFactory, MapFactory
 
@@ -27,11 +27,17 @@ class GameClient:
         self.user_id = ""
         self.token = -1
         self.load_token()
-        self.selector = selectors.DefaultSelector()
-        self.selector.register(self.client_socket, selectors.EVENT_READ)
+
+        self.socket_lock = threading.Lock()
+        self.notification_thread_flag = threading.Event()
+
+        self.notification_thread = threading.Thread(target = self.receive_notification)
+        self.notification_thread.start()
+
+        self.is_server_shutdown = False
 
     def save_token(self, user_id, token):
-        with sqlite3.connect('client2a.sql3') as db:
+        with sqlite3.connect('client2.sql3') as db:
             c = db.cursor()
 
             try:
@@ -52,7 +58,7 @@ class GameClient:
                 print(f"Error executing SQL query: {e}")
 
     def load_token(self):
-         with sqlite3.connect('client2a.sql3') as db: 
+         with sqlite3.connect('client2.sql3') as db: 
             c = db.cursor()
 
             if table_exists(c, "tokens"):
@@ -62,45 +68,75 @@ class GameClient:
                 self.user_id = row[0]
                 self.token = row[1]
 
-    def send_command(self, command):
-        self.client_socket.send(command.encode())
-        response = self.client_socket.recv(1024).decode()
-        return response
-    
-    def process_events(self):
-        for key, events in self.selector.select(timeout=0.1):
-            if key.fileobj == self.client_socket:
-                self.receive_notification()
-    
-    def receive_notification(self):
-        data = b""
-        while True:
-            chunk = self.client_socket.recv(1024)
-            if not chunk:
-                break
-            data += chunk
 
-        if data:
-            print("Received raw notification from the server:")
-            print(data.decode())
+    def print_notification(self, notification):
+        sender_username = notification["Sender"]
+        message = notification["Body"]
+        print(f"\nNotification from '{sender_username}':  {message}\n")
+
+    def send_command(self, command):
+        with self.socket_lock:
+            flag = True
+            while flag:
+                self.client_socket.send(command.encode())
+                response = json.loads(self.client_socket.recv(1024).decode())
+                if response['Message'] == "Notification":
+                    self.print_notification(response)
+                else:
+                    flag = False
+        return response
+
+    def receive_notification(self):
+        while not self.notification_thread_flag.is_set():
             try:
-                notification = json.loads(data.decode())
-                print("Parsed notification:")
-                print(notification)
-                if "Notify" in notification.get("Message", ""):
-                    print("Received notification from the server:")
-                    print(notification["Map"])
-            except json.JSONDecodeError as e:
-                print(f"Error decoding JSON: {e}")
+                with self.socket_lock:
+                    while True:
+                        self.client_socket.settimeout(0.1)
+                        data = json.loads(self.client_socket.recv(1024).decode())
+                        if data:
+                            break
+                    if data["Message"] == "Server Shutdown":
+                        server_shutdown_thread = threading.Thread(target=self.server_shutdown)
+                        server_shutdown_thread.start()
+                    else:
+                        self.print_notification(data)
+
+            except socket.timeout:
+                pass
+            finally:
+                self.client_socket.settimeout(None)
 
     def close(self):
         self.client_socket.close()
 
+    def server_shutdown(self):
+        self.notification_thread_flag.set()
+        self.notification_thread.join()
+        self.is_server_shutdown = True
+
+        print("\nServer has shutdown. Please exit with CTRL+C")
+        command = {}
+        command["command"] = "SS_Ack"
+        self.send_command(json.dumps(command))
+
+        with self.socket_lock:        
+            self.client_socket.close()
+
+        sys.exit(0)
+
+
     def signal_handler(self, signal, frame):
+        self.notification_thread_flag.set()
+        self.notification_thread.join()
+
+        print("\nReceived Ctrl+C. Closing connection...")
         command = {}
         command["command"] = "E"
         self.send_command(json.dumps(command))
-        print("Received Ctrl+C. Closing connection...")
+
+        with self.socket_lock:        
+            self.client_socket.close()
+
         self.close()
         sys.exit(0)
 
@@ -117,14 +153,14 @@ if __name__ == "__main__":
         peername = client.client_socket.getpeername()
         print(f"Connected to {peername}.")
         if client.token != -1:
-            response = json.loads(client.send_command(json.dumps({'command': "C", 'user_id': client.user_id, 'token': client.token })))
+            response = client.send_command(json.dumps({'command': "C", 'user_id': client.user_id, 'token': client.token }))
             if response["Message"] == "Logged in":
                 client.logged_in = True
                 print(response["Message"])
             else:
                 client.token = -1
 
-        while True:
+        while not client.is_server_shutdown:
             command = {}
             if not client.logged_in:
                 user_input = input("Register(R), Login(L) and Exit(E): ")
@@ -151,7 +187,7 @@ if __name__ == "__main__":
                 elif user_input == "E":
                     pass
 
-                response = json.loads(client.send_command(json.dumps(command)))
+                response = client.send_command(json.dumps(command))
 
                 print(response["Message"])
 
@@ -174,14 +210,14 @@ if __name__ == "__main__":
                 
                 if user_input == "E":
                     command["command"] = user_input
-                    response = json.loads(client.send_command(json.dumps(command)))
+                    response = client.send_command(json.dumps(command))
                     print(response["Message"])
                     
 
                 elif user_input == "LO":
                     command["command"] = user_input
                     command["user_id"] = client.user_id
-                    response = json.loads(client.send_command(json.dumps(command)))
+                    response = client.send_command(json.dumps(command))
                     print(response["Message"])
 
 
@@ -189,7 +225,7 @@ if __name__ == "__main__":
                     c = user_input.split()
                     if len(c) == 4:
                         command["command"], command["map_name"], command["map_size"], command["config_template"] = c[0], c[1], c[2], c[3] 
-                        response = json.loads(client.send_command(json.dumps(command)))
+                        response = client.send_command(json.dumps(command))
                         print(response["Message"])
 
                     else:
@@ -199,7 +235,7 @@ if __name__ == "__main__":
                     c = user_input.split()
                     if len(c) == 3:
                         command["command"], command["user_id"], command["map_id"], command["teamname"] = c[0], client.user_id, c[1], c[2] 
-                        response = json.loads(client.send_command(json.dumps(command)))
+                        response = client.send_command(json.dumps(command))
                         print(response["Message"])
 
                     else:
@@ -209,7 +245,7 @@ if __name__ == "__main__":
                     c = user_input.split()
                     if len(c) == 3:
                         command["command"], command["user_id"], command["map_id"], command["teamname"] = c[0], client.user_id, c[1], c[2] 
-                        response = json.loads(client.send_command(json.dumps(command)))
+                        response = client.send_command(json.dumps(command))
                         print(response["Message"])
 
                     else:
@@ -220,7 +256,7 @@ if __name__ == "__main__":
 
                     if len(c) == 1:
                         command["command"] = c[0]
-                        response = json.loads(client.send_command(json.dumps(command)))
+                        response = client.send_command(json.dumps(command))
                         print(response["Message"])
                     else:
                         print("No arguments required for this command. Please try again.")
@@ -230,7 +266,7 @@ if __name__ == "__main__":
 
                     if len(c) == 1:
                         command["command"] = c[0]
-                        response = json.loads(client.send_command(json.dumps(command)))
+                        response = client.send_command(json.dumps(command))
                         print(response["Message"])
                     else:
                         print("No arguments required for this command. Please try again.")
@@ -239,15 +275,15 @@ if __name__ == "__main__":
                     c = user_input.split()
                     if len(c) == 4:
                         command["command"], command["user_id"], command["x"], command["y"], command["radius"] = c[0], client.user_id, c[1], c[2], c[3]
-                        response = json.loads(client.send_command(json.dumps(command)))
+                        response = client.send_command(json.dumps(command))
                         print(response["Message"])
                     elif len(c) == 2:
                         command["command"], command["user_id"], command["radius"] = c[0], client.user_id, c[1]
-                        response = json.loads(client.send_command(json.dumps(command)))
+                        response = client.send_command(json.dumps(command))
                         print(response["Message"])
                     elif len(c) == 1:
                         command["command"], command["user_id"] = c[0], client.user_id
-                        response = json.loads(client.send_command(json.dumps(command)))
+                        response = client.send_command(json.dumps(command))
                         print(response["Message"])
                     else:
                         print("Invalid argument count. Try again.")
@@ -257,7 +293,7 @@ if __name__ == "__main__":
 
                     if len(c) == 2:
                         command["command"], command["user_id"], command["direction"] = c[0], client.user_id, c[1]
-                        response = json.loads(client.send_command(json.dumps(command)))
+                        response = client.send_command(json.dumps(command))
                         print(response["Message"])
                     
                     else: 
@@ -268,7 +304,7 @@ if __name__ == "__main__":
 
                     if len(c) == 2:
                         command["command"], command["user_id"], command["object_type"] = c[0], client.user_id, c[1]
-                        response = json.loads(client.send_command(json.dumps(command)))
+                        response = client.send_command(json.dumps(command))
                         print(response["Message"])
                     else:
                         print("Invalid number of arguments. Try again.")
@@ -276,10 +312,8 @@ if __name__ == "__main__":
                 else:
                     c = user_input.split()
                     command["command"] = c[0]
-                    response = json.loads(client.send_command(json.dumps(command)))
+                    response = client.send_command(json.dumps(command))
                     print(response["Message"])
-
-                client.process_events()  # Check for notifications while waiting for user input
 
                 if response:
                     if response["Message"] == "Logged out":
@@ -300,4 +334,6 @@ if __name__ == "__main__":
         print("Server disconnected unexpectedly.")
         pass
     finally:
+        if not client.notification_thread_flag.is_set():
+            client.notification_thread_flag.set()
         client.close()

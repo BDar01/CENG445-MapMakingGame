@@ -31,7 +31,7 @@ class User:
     
 
     def __str__(self):
-        return f"User ID: {self.user_id}\nUsername: {self.username}\nEmail: {self.email}\nFull name: {self.fullname}"
+        return f"User ID: {self.user_id}\nUsername: {self.username}\nEmail: {self.email}\nFull name: {self.fullname}\nToken: {self.token}\n{self.player}"
 
     def update(self, username=None, email=None, fullname=None, passwd=None):
         if username:
@@ -81,6 +81,7 @@ class Player(Object):
         self.repo = repo
         self.map = map
 
+
     def __str__(self):
         repo_str = "\n"
         for i, item in enumerate(self.repo):
@@ -89,8 +90,17 @@ class Player(Object):
             if(i < len(self.repo) - 1):
                 repo_str += "\n"
 
-        output = "Player: \nUser: '" + str(self.user) +  "'\nTeam: '" + self.team + "'\nHealth: " + str(self.health) + "\nRepository: " + repo_str 
+        output = "Player: \nUser: '" + str(self.user) +  "'\nTeam: '" + self.team + "'\nHealth: " + str(self.health) + "\nRepository: " + repo_str + "\nMap ID of the Player: " + str(self.map.id)
         return output
+    
+    def getPositionOfPlayer(self):
+        x, y = 0, 0
+        for tpl in self.map.teams[self.team].objects_list:
+            if (tpl[2].id == self.id and tpl[2].type == "Player"):
+                x, y = tpl[0], tpl[1]
+                break
+        
+        return x, y
 
     def updatePositionOfPlayer(self, direction):
         objects_list = self.map.objects_list 
@@ -98,71 +108,71 @@ class Player(Object):
 
         if(direction == "W"):
             for i, tpl in enumerate(objects_list):
-                if (tpl[2].id == self.id):
+                if (tpl[2].id == self.id and tpl[2].type == "Player"):
                     objects_list[i] = (max(0, tpl[0] - 1), tpl[1], tpl[2])
-            for i, tpl in enumerate(team_view_object_list):
-                if (tpl[2].id == self.id):
-                    team_view_object_list[i] = (max(0, tpl[0] - 1), tpl[1], tpl[2])
+            #for i, tpl in enumerate(team_view_object_list):
+            #    if (tpl[2].id == self.id and tpl[2].type == "Player"):
+            #        team_view_object_list[i] = (max(0, tpl[0] - 1), tpl[1], tpl[2])
 
         elif(direction == "NW"):
             for i, tpl in enumerate(objects_list):
-                if (tpl[2].id == self.id):
+                if (tpl[2].id == self.id and tpl[2].type == "Player"):
                     objects_list[i] = (max(0, tpl[0] - 1), min(self.map.height, tpl[1] + 1), tpl[2])
-            for i, tpl in enumerate(team_view_object_list):
-                if (tpl[2].id == self.id):
-                    team_view_object_list[i] = (max(0, tpl[0] - 1), min(self.map.height, tpl[1] + 1), tpl[2])
+            #for i, tpl in enumerate(team_view_object_list):
+            #    if (tpl[2].id == self.id and tpl[2].type == "Player"):
+            #        team_view_object_list[i] = (max(0, tpl[0] - 1), min(self.map.height, tpl[1] + 1), tpl[2])
         
         elif(direction == "N"):
             for i, tpl in enumerate(objects_list):
-                if (tpl[2].id == self.id):
+                if (tpl[2].id == self.id and tpl[2].type == "Player"):
                     objects_list[i] = (tpl[0], min(self.map.height, tpl[1] + 1), tpl[2])
-            for i, tpl in enumerate(team_view_object_list):
-                if (tpl[2].id == self.id):
-                    team_view_object_list[i] = (tpl[0], min(self.map.height, tpl[1] + 1), tpl[2])
+            #for i, tpl in enumerate(team_view_object_list):
+            #    if (tpl[2].id == self.id and tpl[2].type == "Player"):
+            #        team_view_object_list[i] = (tpl[0], min(self.map.height, tpl[1] + 1), tpl[2])
 
         elif(direction == "NE"):
             for i, tpl in enumerate(objects_list):
-                if (tpl[2].id == self.id):
+                if (tpl[2].id == self.id and tpl[2].type == "Player"):
                     objects_list[i] = (min(self.map.width, tpl[0] + 1), min(self.map.height, tpl[1] + 1), tpl[2])
-            for i, tpl in enumerate(team_view_object_list):
-                if (tpl[2].id == self.id):
-                    team_view_object_list[i] = (min(self.map.width, tpl[0] + 1), min(self.map.height, tpl[1] + 1), tpl[2])
+            #for i, tpl in enumerate(team_view_object_list):
+            #    if (tpl[2].id == self.id and tpl[2].type == "Player"):
+            #        team_view_object_list[i] = (min(self.map.width, tpl[0] + 1), min(self.map.height, tpl[1] + 1), tpl[2])
 
         elif(direction == "E"):
             for i, tpl in enumerate(objects_list):
-                if (tpl[2].id == self.id):
+                if (tpl[2].id == self.id and tpl[2].type == "Player"):
                     objects_list[i] = (min(self.map.width, tpl[0] + 1), tpl[1], tpl[2])
-            for i, tpl in enumerate(team_view_object_list):
-                if (tpl[2].id == self.id):
-                    team_view_object_list[i] = (min(self.map.width, tpl[0] + 1), tpl[1], tpl[2])
+            #for i, tpl in enumerate(team_view_object_list):
+            #    if (tpl[2].id == self.id and tpl[2].type == "Player"):
+            #        team_view_object_list[i] = (min(self.map.width, tpl[0] + 1), tpl[1], tpl[2])
 
         elif(direction == "SE"):
             for i, tpl in enumerate(objects_list):
-                if (tpl[2].id == self.id):
+                if (tpl[2].id == self.id and tpl[2].type == "Player"):
                     objects_list[i] = (min(self.map.width, tpl[0] + 1), max(0, tpl[1] - 1), tpl[2])
-            for i, tpl in enumerate(team_view_object_list):
-                if (tpl[2].id == self.id):
-                    team_view_object_list[i] = (min(self.map.width, tpl[0] + 1), max(0, tpl[1] - 1), tpl[2])
+            #for i, tpl in enumerate(team_view_object_list):
+            #    if (tpl[2].id == self.id and tpl[2].type == "Player"):
+            #        team_view_object_list[i] = (min(self.map.width, tpl[0] + 1), max(0, tpl[1] - 1), tpl[2])
 
         elif(direction == "S"):
             for i, tpl in enumerate(objects_list):
-                if (tpl[2].id == self.id):
+                if (tpl[2].id == self.id and tpl[2].type == "Player"):
                     objects_list[i] = (tpl[0], max(0, tpl[1] - 1), tpl[2])
-            for i, tpl in enumerate(team_view_object_list):
-                if (tpl[2].id == self.id):
-                    team_view_object_list[i] = (tpl[0], max(0, tpl[1] - 1), tpl[2])
+            #for i, tpl in enumerate(team_view_object_list):
+            #    if (tpl[2].id == self.id and tpl[2].type == "Player"):
+            #        team_view_object_list[i] = (tpl[0], max(0, tpl[1] - 1), tpl[2])
 
         elif(direction == "SW"):
             for i, tpl in enumerate(objects_list):
-                if (tpl[2].id == self.id):
+                if (tpl[2].id == self.id and tpl[2].type == "Player"):
                     objects_list[i] = (max(0, tpl[0] - 1), max(0, tpl[1] - 1), tpl[2])
-            for i, tpl in enumerate(team_view_object_list):
-                if (tpl[2].id == self.id):
-                    team_view_object_list[i] = (max(0, tpl[0] - 1), max(0, tpl[1] - 1), tpl[2])
+            #for i, tpl in enumerate(team_view_object_list):
+            #    if (tpl[2].id == self.id and tpl[2].type == "Player"):
+            #        team_view_object_list[i] = (max(0, tpl[0] - 1), max(0, tpl[1] - 1), tpl[2])
 
     def updateBackgroundImage(self):
         for tpl in self.map.objects_list: 
-            if (tpl[2].id == self.id):
+            if (tpl[2].id == self.id and tpl[2].type == "Player"):
                 x = tpl[0]
                 y = tpl[1]
         self.map.teams[self.team].setimage(x, y, 0, self.map.getimage(x,y,0)) 
@@ -172,10 +182,33 @@ class Player(Object):
         self.updatePositionOfPlayer(direction)
         self.updateBackgroundImage()
         # need to query
+        x, y = self.getPositionOfPlayer()
+        self.query(x, y, 0)
         self.competition()
 
         if (self.health <= 0):
             self.map.leave(self.user, self.team)
+
+    def query(self, x, y, r):
+        objects_list = self.map.query(x, y, r)
+        return objects_list
+    
+        new_objects_list = []
+        flag = True
+
+        for o1 in objects_list:
+            for o2 in self.map.teams[self.team].objects_list:
+                if (o1[2].id == o2[2].id and o1[2].type == o2[2].type): 
+                    flag = False
+            if (flag):
+                new_objects_list.append(o1)
+            flag = True
+        
+        for o in new_objects_list:
+            self.map.teams[self.team].objects_list.append(o)
+
+        return self.map.teams[self.team].objects_list
+
 
     def competition(self):   #Will be implemented in next phases.
         return
@@ -184,37 +217,41 @@ class Player(Object):
         time.sleep(stun)
 
     def drop(self, objecttype):
-
+        flag = False
         available_objects = [obj for obj in self.repo if obj[0] == objecttype]
-        drop_obj = available_objects[0]
-        if(drop_obj):
-            for tpl in self.map.objects_list: 
-                    if (tpl[2].id == self.id):
-                        x = tpl[0]
-                        y = tpl[1]
-            if (drop_obj[0] == "Health"):
-                if max(0, x-5) == x-5:
-                    nx = x-5
-                    ny = 0
-                elif max(0, y-5) == y-5:
-                    nx = 0
-                    ny = y-5
-                elif min(self.map.width, x+5) == x+5:
-                    nx = x+5
-                    ny = 0
-                elif min(self.map.height, y+5) == y+5:
-                    nx = 0
-                    ny = y+5
-                self.map.addHealthObject(nx, ny, drop_obj[1], drop_obj[2])
-                self.map.teams[self.team].addHealthObject(nx, ny, drop_obj[1], drop_obj[2])
-            if (drop_obj[0] == "Mine"):
-                self.map.addMineObject(x, y, drop_obj[1], drop_obj[2], drop_obj[3])
-                self.map.teams[self.team].addMineObject(x, y, drop_obj[1], drop_obj[2], drop_obj[3])
-            if (drop_obj[0] == "Freezer"):
-                self.map.addFreezerObject(x, y, drop_obj[1], drop_obj[2], drop_obj[3])
-                self.map.teams[self.team].addFreezerObject(x, y, drop_obj[1], drop_obj[2], drop_obj[3])
+        if(available_objects):
+            drop_obj = available_objects[0]
+            if(drop_obj):
+                for tpl in self.map.objects_list: 
+                        if (tpl[2].id == self.id):
+                            x = tpl[0]
+                            y = tpl[1]
+                if (drop_obj[0] == "Health"):
+                    if max(0, x-5) == x-5:
+                        nx = x-5
+                        ny = 0
+                    elif max(0, y-5) == y-5:
+                        nx = 0
+                        ny = y-5
+                    elif min(self.map.width, x+5) == x+5:
+                        nx = x+5
+                        ny = 0
+                    elif min(self.map.height, y+5) == y+5:
+                        nx = 0
+                        ny = y+5
+                    self.map.addHealthObject(nx, ny, drop_obj[1], drop_obj[2])
+                    self.map.teams[self.team].addHealthObject(nx, ny, drop_obj[1], drop_obj[2])
+                if (drop_obj[0] == "Mine"):
+                    self.map.addMineObject(x, y, drop_obj[1], drop_obj[2], drop_obj[3])
+                    self.map.teams[self.team].addMineObject(x, y, drop_obj[1], drop_obj[2], drop_obj[3])
+                if (drop_obj[0] == "Freezer"):
+                    self.map.addFreezerObject(x, y, drop_obj[1], drop_obj[2], drop_obj[3])
+                    self.map.teams[self.team].addFreezerObject(x, y, drop_obj[1], drop_obj[2], drop_obj[3])
+            
+                self.repo.remove(drop_obj)
+                flag = True
         
-        self.repo.remove(drop_obj)
+        return flag
 
         
         ### MINE OBJECT ###
@@ -302,7 +339,6 @@ class Health(Object):
 
 
         ### MAP ###
-    
 class Map:
     id = -1
 
@@ -319,7 +355,7 @@ class Map:
         self.player_repo = []
         self.config = config
         self.parse_config(config)
-        #self.initializeObjects()
+        self.initialized = False
 
     def __str__(self):
         teams_str = "\n".join(self.teams) 
@@ -342,9 +378,11 @@ class Map:
         return output
     
     def initializeObjects(self):
-        for obj in self.objects_list:
-            if(obj[2].__class__.__name__ != 'Player'):
-                obj[2].run(self)
+        if (not self.initialized):
+            for obj in self.objects_list:
+                if(obj[2].__class__.__name__ != 'Player'):
+                    obj[2].run(self)
+            self.initialized = True
 
     def parse_config(self, config):
         if config:
@@ -394,7 +432,10 @@ class Map:
         self.objects_list.append((x, y, p))
     
     def removeObject(self, id):
-        self.objects_list = [obj for obj in self.objects_list if obj[2].id != id]
+        for i, obj in enumerate(self.objects_list):
+            if (obj[2].id == id):
+                del self.objects_list[i]
+                break
 
     def listObjects(self):
         return iter([(obj[2].id, obj[2].user, obj[2].type, obj[0], obj[1]) for obj in self.objects_list])
@@ -436,15 +477,17 @@ class Map:
 
         p = Player(player, team, self.player_health, self.player_repo[:], self)
         self.objects_list.append((0, 0, p))
-        self.teammap(team).addPlayerObject(0, 0, p) #Add player to team_map as well.
+        self.teammap(team).addPlayerObject(0, 0, p)
         return p
 
     def leave(self, player, team):
+        flag = True
         for object in self.objects_list:
             if(object[2].__class__.__name__ == 'Player' and object[2].user == player and object[2].team == team):
                 self.removeObject(object[2].id)
-        return
+                flag = False
+                break
+        return flag
     
     def teammap(self, team):
-        return self.teams.get(team)
-    
+        return self.teams.get(team)    
