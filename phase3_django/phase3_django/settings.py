@@ -48,6 +48,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    #"phase3_app.middleware.GameClientMiddleware"
 ]
 
 ROOT_URLCONF = "phase3_django.urls"

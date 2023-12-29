@@ -477,7 +477,7 @@ class Map:
 
         p = Player(player, team, self.player_health, self.player_repo[:], self)
         self.objects_list.append((0, 0, p))
-        self.teammap(team).addPlayerObject(0, 0, p)
+        #self.teammap(team).addPlayerObject(0, 0, p)
         return p
 
     def leave(self, player, team):

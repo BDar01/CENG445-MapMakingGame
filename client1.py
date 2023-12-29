@@ -37,7 +37,7 @@ class GameClient:
         self.is_server_shutdown = False
 
     def save_token(self, user_id, token):
-        with sqlite3.connect('client2.sql3') as db:
+        with sqlite3.connect('client1.sql3') as db:
             c = db.cursor()
 
             try:
@@ -58,7 +58,7 @@ class GameClient:
                 print(f"Error executing SQL query: {e}")
 
     def load_token(self):
-         with sqlite3.connect('client2.sql3') as db: 
+         with sqlite3.connect('client1.sql3') as db: 
             c = db.cursor()
 
             if table_exists(c, "tokens"):
