@@ -10,8 +10,6 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
 def root_view(request):
-    return render(request, 'root.html')
-    '''
     client = GameClient('localhost',1423)
     client.load_token()
     if client.token != -1:
@@ -25,14 +23,12 @@ def root_view(request):
             #else:
                 # Handle the case where 'username' is not present in the response
                 #messages.error(request, 'Username not found in the server response.')
-                #return HttpResponse("Username not found in the server response.")
                 #return render(request, 'root.html')
         else:
             client.token = -1
             return render(request, 'root.html')
     else:
         return render(request, 'root.html')
-    '''
 
 def main_view(request):
     client = GameClient('localhost',1423)

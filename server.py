@@ -345,7 +345,7 @@ class GameServer:
 
                                 
                                 else:
-                                    response = json.dumps({'Message': "Authentication Failed."})
+                                    response = json.dumps({'Message': "Pre-Authentication Failed."})
                                     client_socket.send(response.encode())  
 
                             elif command == "E":
