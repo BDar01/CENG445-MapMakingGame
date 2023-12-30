@@ -1,10 +1,12 @@
+{% extends 'base.html' %}
+
+{% block content %}
 <html>
     <body>
         <button id="register-btn">Register</button>
         <button id="login-btn">Login</button>
     </body>
 </html>
-
 
 <script>
     // Get references to the buttons
@@ -20,3 +22,8 @@
         window.location.href = "{% url 'login' %}"; // Replace 'login' with your actual URL
     });
 </script>
+{% endblock %}
+
+{% block extra_scripts %}
+    {% include 'exit_on_close.html' %}
+{% endblock %}

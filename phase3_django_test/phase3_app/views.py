@@ -14,6 +14,7 @@ def root_view(request):
     client.load_token()
     if client.token != -1:
         response = client.send_command(json.dumps({'command': "C", 'user_id': client.user_id, 'token': client.token}))
+        print("Pre-check ", response)
         if "Message" in response and response["Message"] == "Logged in":
             client.logged_in = True
             #if 'username' in response:
@@ -113,9 +114,10 @@ def logout_user(request):
 
         if client.logged_in:
             response = client.logout_user()
-            print(response)
+            print("Logout ", response)
             if response['Message'] == 'Logged out':
                 client.token = -1
+                client.save_token(client.user_id,client.token)
                 messages.success(request, 'Logout successful!')
             else:
                 messages.error(request, 'Logout failed.')
@@ -128,18 +130,20 @@ def logout_user(request):
 
     return redirect('root')
 
-@require_POST
 @csrf_exempt
-@sync_to_async
-def exit_on_close(request):
+@require_POST
+async def exit_on_close(request):
     try:
         data = json.loads(request.body)
         user_id = data.get('user_id')
         if user_id:
             client = GameClient('localhost', 1423)
             command = {'command': 'E', 'user_id': user_id}
-            response = client.send_command(json.dumps(command))
-            return JsonResponse({'Message': response['Message']})
+            
+            # Use sync_to_async to make the fetch operation asynchronous
+            async_response = await sync_to_async(client.send_command)((json.dumps(command)))
+
+            return JsonResponse({'Message': async_response['Message']})
     except Exception as e:
         print(f"Error: {e}")
         return JsonResponse({'Message': 'Internal Server Error'}, status=500)

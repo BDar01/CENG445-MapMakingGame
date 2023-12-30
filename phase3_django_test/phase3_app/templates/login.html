@@ -1,6 +1,14 @@
+{% extends 'base.html' %}
+
+{% block content %}
 <h2>Login</h2>
 <form method="post" action="{% url 'login' %}">
     {% csrf_token %}
     {{ form.as_p }}
     <button type="submit" value="Login">Login</button>
 </form>
+{% endblock %}
+
+{% block extra_scripts %}
+    {% include 'exit_on_close.html' %}
+{% endblock %}

@@ -101,6 +101,9 @@ class GameClient:
             if self.socket:
                 self.socket.close()
                 del self.socket
+                self.notification_thread_flag.set()
+                self.notification_thread.join()
+
             self.connected = False
 
     def send_command(self, command):
@@ -138,11 +141,9 @@ class GameClient:
     def logout_user(self):
         if not self.logged_in:
             return {'Message': 'Not logged in.'}
-
-        command = {
-            'command': 'LO',
-            'user_id': self.user_id,
-        }
+        command = {}
+        command["command"] = "LO"
+        command["user_id"] = self.user_id
         response = self.send_command(json.dumps(command))
 
         if response['Message'] == 'Logged out':

@@ -1,36 +1,16 @@
-<!-- game_app/templates/exit_on_close.html -->
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Exit on Close</title>
-</head>
-<body>
+<!-- exit_on_close.html -->
 
 <script>
-window.addEventListener('beforeunload', function (event) {
-    // Send an exit command to the server when the window is closed
-    const exitCommand = {
-        'command': 'E',
-    };
+    window.addEventListener('beforeunload', function (event) {
+        // Send an exit command to the server when the window is closed
+        const exitCommand = {
+            'command': 'E',
+            'user_id': user_id  // Make sure to pass the user_id from your Django view or template context
+        };
 
-    fetch('http://localhost:1423', {
-        method: 'POST',
-        body: JSON.stringify(exitCommand),
-        headers: {
-            'Content-Type': 'application/json',
-        },
-    })
-    .then(response => response.json())
-    .then(data => {
-        console.log(data.Message);  // Log the server response message
-    })
-    .catch(error => {
-        console.error('Error:', error);
+        // Serialize the data and send it using sendBeacon
+        const data = JSON.stringify(exitCommand);
+        navigator.sendBeacon('http://localhost:1423/exit-on-close/', data);
     });
-});
 </script>
 
-</body>
-</html>

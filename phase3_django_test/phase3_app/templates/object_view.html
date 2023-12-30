@@ -1,4 +1,7 @@
 <!-- phase3_app/templates/object_view.html -->
+{% extends 'base.html' %}
+
+{% block content %}
 <html>
     <body>
         <svg height="400" width="400">
@@ -9,3 +12,8 @@
         </svg> 
     </body>
 </html>
+{% endblock %}
+
+{% block extra_scripts %}
+    {% include 'exit_on_close.html' %}
+{% endblock %}

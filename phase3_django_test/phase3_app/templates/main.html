@@ -1,3 +1,6 @@
+{% extends 'base.html' %}
+
+{% block content %}
 <html>
     <body>
         <h1>Hello {{username}}. Welcome to the our game.</h1>
@@ -14,3 +17,8 @@
         window.location.href = "{% url 'logout' %}"; // Replace 'login' with your actual URL
     });
 </script>
+{% endblock %}
+
+{% block extra_scripts %}
+    {% include 'exit_on_close.html' %}
+{% endblock %}

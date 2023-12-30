@@ -267,14 +267,16 @@ class GameServer:
                 username = self.user_factory.user_list[user_id].username
                 self.user_factory.user_list[user_id].logout()
                 del self.user_sockets[username]
-                self.authenticated_user = None
+                thread_local.authenticated_user = None
                 response = json.dumps({"Message": "Logged out"})
                 return response
 
             elif data['command'] == "E":
+                user_id = data.get('user_id')
                 thread_local.is_connected = False
                 username = self.user_factory.user_list[user_id].username
-                del self.user_sockets[user]
+                del self.user_sockets[username]
+                thread_local.authenticated_user = None
                 response = json.dumps({"Message": "Exit"})
                 return response
 
