@@ -19,7 +19,7 @@ def root_view(request):
             client.logged_in = True
             #if 'username' in response:
             client.username = response['username']
-            messages.success(request, 'Already logged in!')
+            messages.success(request, response['Message'])
             return redirect('main')
             #else:
                 # Handle the case where 'username' is not present in the response
@@ -58,9 +58,9 @@ def register_user(request):
                 print(response['Message'])
 
                 if response['Message'] == 'Username exists. Please try for another username.':
-                    messages.error(request, 'Username already exists. Please choose another username.')
+                    messages.error(request, response['Message'])
                 elif response['Message'] == 'User added successfully. Please login.':
-                    messages.success(request, 'Registration successful! Please log in.')
+                    messages.success(request, response['Message'])
 
                     return redirect('login')
                 
@@ -94,7 +94,7 @@ def login_user(request):
                     client.username = username
                     client.save_token(client.user_id, client.token)
 
-                    messages.success(request, 'Login successful!')
+                    messages.success(request, response['Message'])
                     return redirect('main')
                 else:
                     messages.error(request, 'Incorrect username or password. Please try again.')
@@ -118,7 +118,7 @@ def logout_user(request):
             if response['Message'] == 'Logged out':
                 client.token = -1
                 client.save_token(client.user_id,client.token)
-                messages.success(request, 'Logout successful!')
+                messages.success(request, response['Message'])
             else:
                 messages.error(request, 'Logout failed.')
         else:
