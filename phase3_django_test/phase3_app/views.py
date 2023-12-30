@@ -1,5 +1,5 @@
 # game_app/views.py
-from .forms import RegistrationForm, LoginForm
+from .forms import RegistrationForm, LoginForm, NewMapForm, JoinMapForm
 from django.shortcuts import render, redirect
 from asgiref.sync import sync_to_async
 from django.contrib import messages
@@ -30,12 +30,83 @@ def root_view(request):
             return render(request, 'root.html')
     else:
         return render(request, 'root.html')
+    
+def list_maps(request):
+    client = GameClient('localhost',1423)
+
+    response = client.list_maps()
+
+def new_map(request):
+    if request.method == 'POST':
+        form = NewMapForm(request.POST)
+        try: 
+            client = GameClient('localhost', 1423)
+
+            if form.is_valid():
+                name = form.cleaned_data['name']
+                size = form.cleaned_data['size']
+                type = form.cleaned_data['type']
+
+                response = client.new_map(name, size, type)
+                request.session['new_map_response'] = response
+
+                return redirect('main')
+
+
+        except Exception as e:
+            print(f"Error: {e}")
+            messages.error(request, 'Internal Server Error')
+    else:
+        messages.error(request, 'Invalid registration form. Please check your input.')
+
+    return redirect('main')
+
+
+def join_map(request, map_id):
+    if request.method == 'POST':
+        form = JoinMapForm(request.POST)
+
+        try: 
+            client = GameClient('localhost', 1423)
+
+            if form.is_valid():
+                teamname = form.cleaned_data['teamname']
+
+                client.join_map(map_id, teamname)
+
+                return render(request, 'map.html', {'map_id': map_id, 'teamname': teamname})
+
+
+
+        except Exception as e:
+            print(f"Error: {e}")
+            messages.error(request, 'Internal Server Error')
+    else:
+        messages.error(request, 'Invalid registration form. Please check your input.')
+
+    return redirect('main')
+
+
+def leave_map(request):
+    pass
+
 
 def main_view(request):
+    
     client = GameClient('localhost',1423)
     if not client.logged_in:
         return redirect('root')
-    return render(request, 'main.html', {'username': client.username})
+    
+    new_map_form = NewMapForm()
+    join_map_form = JoinMapForm()
+    
+    maps = client.list_maps().get("Message", None)
+    
+
+    new_map_response_data = request.session.pop('new_map_response', {})
+    new_map_response = new_map_response_data.get("Message", None)
+
+    return render(request, 'main.html', {'username': client.username, 'new_map_form': new_map_form, 'join_map_form': join_map_form, 'new_map_response': new_map_response, 'maps': maps})
 
 # Not corrected implementation using GameClient from client.py
 def register_user(request):
@@ -55,7 +126,7 @@ def register_user(request):
 
                 response = client.register_user(username, fullname, email, password)
 
-                print(response['Message'])
+               
 
                 if response['Message'] == 'Username exists. Please try for another username.':
                     messages.error(request, response['Message'])

@@ -1,13 +1,16 @@
 from game import *
 
 MAPS = {
-    "arena": {"image":"BackgroundImage1.jpg", 
+    "arena": {
+        "type": "Arena",
+        "image":"BackgroundImage1.jpg", 
         "playervision": 10, 
         "playerh": 100, 
         "playerrepo": [("Mine", 3, 20, 1000), ("Freezer", 1, 5, 10000)], 
         "objects": [(2, 3, Mine(7, 30, 1000)), (10, 10, Freezer(5, 4, 1000))]
     },
     "labyrinth": {
+        "type": "Labyrinth",
         "image":"BackgroundImage2.jpg", 
         "playervision": 8, 
         "playerh": 120, 

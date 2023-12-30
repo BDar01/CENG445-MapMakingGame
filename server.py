@@ -217,8 +217,8 @@ class GameServer:
 
             elif data['command'] == "listmaps":
                 if len(self.map_factory.map_list.items()) == 0:
-                    return json.dumps({"Message": "No map found."})
-                return json.dumps({"Message": [({"map_id": map_id, "map_name": game_map.name, "map_size": (game_map.width, game_map.height),"map_teams": list(game_map.teams.keys()), "map_config": self.serialize_config(game_map.config,)}) for map_id, game_map in self.map_factory.map_list.items()]})
+                    return json.dumps({"Message": []})
+                return json.dumps({"Message": [({"type": game_map.type,"map_id": map_id, "map_name": game_map.name, "map_size": (game_map.width, game_map.height),"map_teams": list(game_map.teams.keys()), "map_config": self.serialize_config(game_map.config,)}) for map_id, game_map in self.map_factory.map_list.items()]})
 
             elif data['command'] == "joinmap":
                 if len(data.items()) != 4:
@@ -370,7 +370,6 @@ class GameServer:
                     try:
                         client_socket.settimeout(1.0)
                         response = client_socket.recv(1024).decode()
-                        print(response)
                         data = json.loads(response)
             
                         if data:

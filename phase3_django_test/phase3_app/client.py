@@ -151,6 +151,34 @@ class GameClient:
             self.user_id = None
 
         return response
+    
+    def join_map(self, map_id, teamname):
+        command = {
+            'command': "joinmap",
+            'user_id': self.user_id,
+            'map_id': map_id,
+            'teamname': teamname
+        }
+
+        return self.execute_command(command)
+    
+    def list_maps(self):
+        command = {
+            'command': "listmaps"
+        }
+
+        return self.execute_command(command)
+    
+    def new_map(self, name, size, type):
+        command = {
+            'command': "newmap",
+            'map_name': name,
+            'map_size': size,
+            'config_template': type
+        }
+
+        response = self.execute_command(command)
+        return response
 
     def execute_command(self, command):
         response = self.send_command(json.dumps(command))

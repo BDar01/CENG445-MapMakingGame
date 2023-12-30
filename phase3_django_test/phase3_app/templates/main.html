@@ -14,6 +14,33 @@
         {% endif %}
 
         <button id="logout-btn">Logout</button>
+        <button id="newmap-btn">New Map</button>
+        {% if maps %}
+            {% for map in maps %}
+                <div style="background-color: red;">
+                    <h1>
+                        ID: {{map.map_id}} Name: {{map.map_name}} Size: {{map.map_size}} Type: {{map.type}}
+                    </h1>
+                    <form id="join-map-form" method="post" action="{% url 'join_map' map_id=map.map_id%}">
+                        {% csrf_token %}
+                        {{ join_map_form.as_p }}
+                        <button type="submit">Join Map</button>
+                    </form>
+                </div>
+            {% endfor %}
+        {% else %}
+            <h1>No maps found!</h1>
+        {% endif %}
+
+        <form id="new-map-form" method="post" style="display: none;" action="{% url 'new_map' %}">
+            {% csrf_token %}
+            {{ new_map_form.as_p }}
+            <button type="submit">Submit</button>
+        </form>
+        {% if new_map_response %}
+            <h1>{{ new_map_response }}</h1>
+        {% endif %}
+        
     </body>
 </html>
 
@@ -21,10 +48,19 @@
 <script>
     // Get references to the buttons\
     var logoutButton = document.getElementById("logout-btn");
-
+    var newMapButton = document.getElementById("newmap-btn");
+    var newMapForm = document.getElementById("new-map-form");
+    
     logoutButton.addEventListener("click", function() {
         window.location.href = "{% url 'logout' %}"; // Replace 'login' with your actual URL
     });
+
+    newMapButton.addEventListener("click", function() {
+        // Show the form when the button is clicked
+        newMapForm.style.display = "block";
+    });
+
+    
 </script>
 {% endblock %}
 

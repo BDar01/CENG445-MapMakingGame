@@ -354,6 +354,7 @@ class Map:
         self.player_health = 100
         self.player_repo = []
         self.config = config
+        self.type = None
         self.parse_config(config)
         self.initialized = False
 
@@ -386,6 +387,8 @@ class Map:
 
     def parse_config(self, config):
         if config:
+            if('type' in config):
+                self.type = config['type']
             if ('image' in config):
                 bg_img = cv.imread(config['image'])
                 if(bg_img is not None and bg_img.shape[0] == self.height and bg_img.shape[1] == self.width):
