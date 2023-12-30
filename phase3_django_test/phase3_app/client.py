@@ -151,6 +151,15 @@ class GameClient:
             self.user_id = None
 
         return response
+    def leave_map(self, map_id, teamname):
+        command = {
+            'command': "leavemap",
+            'user_id': self.user_id,
+            'map_id': map_id,
+            'teamname': teamname
+        }
+
+        return self.execute_command(command)
     
     def join_map(self, map_id, teamname):
         command = {

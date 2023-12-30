@@ -61,7 +61,6 @@ def new_map(request):
 
     return redirect('main')
 
-
 def join_map(request, map_id):
     if request.method == 'POST':
         form = JoinMapForm(request.POST)
@@ -88,7 +87,25 @@ def join_map(request, map_id):
 
 
 def leave_map(request):
-    pass
+    map_id = request.GET.get('map_id', '')
+    teamname = request.GET.get('teamname', '')
+
+    try: 
+        client = GameClient('localhost', 1423)
+        response = client.leave_map(map_id, teamname)
+
+        request.session['leave_map_response'] = response
+
+        return redirect('main')
+
+
+
+    except Exception as e:
+        print(f"Error: {e}")
+        messages.error(request, 'Internal Server Error')
+        return redirect('main')
+
+
 
 
 def main_view(request):
@@ -106,7 +123,11 @@ def main_view(request):
     new_map_response_data = request.session.pop('new_map_response', {})
     new_map_response = new_map_response_data.get("Message", None)
 
-    return render(request, 'main.html', {'username': client.username, 'new_map_form': new_map_form, 'join_map_form': join_map_form, 'new_map_response': new_map_response, 'maps': maps})
+
+    leave_map_response_data = request.session.pop('leave_map_response', {})
+    leave_map_response = leave_map_response_data.get("Message", None)
+
+    return render(request, 'main.html', {'username': client.username, 'new_map_form': new_map_form, 'join_map_form': join_map_form, 'new_map_response': new_map_response, 'leave_map_response': leave_map_response,  'maps': maps})
 
 # Not corrected implementation using GameClient from client.py
 def register_user(request):

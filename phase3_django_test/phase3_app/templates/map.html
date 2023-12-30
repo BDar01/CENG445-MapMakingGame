@@ -1,4 +1,18 @@
 <html>
     <h1>Welcome to map {{map_id}}</h1>
     <h1>Your team is {{teamname}}</h1>
+    <button id = "leavemap-btn">Leave Map</button>
 </html>
+
+
+<script>
+
+    var leaveMapButton = document.getElementById("leavemap-btn")
+
+    var mapId = "{{map_id}}"
+    var teamName = "{{teamname}}"
+    leaveMapButton.addEventListener("click", function() {
+        window.location.href = "{% url 'leave_map' %}?map_id="+ mapId + "&teamname=" + teamName; // Replace 'login' with your actual URL
+    });
+
+</script>
