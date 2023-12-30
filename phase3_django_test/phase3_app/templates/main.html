@@ -24,6 +24,7 @@
                     <form id="join-map-form" method="post" action="{% url 'join_map' map_id=map.map_id%}">
                         {% csrf_token %}
                         {{ join_map_form.as_p }}
+                        <input type="hidden" name="background_image" value="{{ map.map_config.image }}">
                         <button type="submit">Join Map</button>
                     </form>
                 </div>

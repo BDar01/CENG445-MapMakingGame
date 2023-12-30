@@ -1,7 +1,41 @@
+{% load static %}
+
 <html>
-    <h1>Welcome to map {{map_id}}</h1>
-    <h1>Your team is {{teamname}}</h1>
-    <button id = "leavemap-btn">Leave Map</button>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Welcome</title>
+        <style>
+            body {
+                /* Specify the URL of your background image */
+                background-image: url('{% static "images/" %}{{background_image}}');
+                
+                /* Set background size to cover the entire body */
+                background-size: cover;
+    
+                /* Set background position to center the image */
+                background-position: center;
+    
+                /* Add other styles as needed */
+                /* For example, you might want to set a background color as a fallback */
+                background-color: #f0f0f0;
+    
+                /* Set text color to contrast with the background */
+                color: #ffffff;
+            }
+    
+            /* Add other styles for your content as needed */
+            h1 {
+                /* Example style for an h1 element */
+                color: #333333;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>Welcome to map {{map_id}}</h1>
+        <h1>Your team is {{teamname}}</h1>
+        <button id = "leavemap-btn">Leave Map</button>
+    </body>
 </html>
 
 

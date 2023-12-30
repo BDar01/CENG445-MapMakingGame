@@ -64,16 +64,17 @@ def new_map(request):
 def join_map(request, map_id):
     if request.method == 'POST':
         form = JoinMapForm(request.POST)
-
+        background_image = request.POST.get('background_image', '')
         try: 
             client = GameClient('localhost', 1423)
 
             if form.is_valid():
                 teamname = form.cleaned_data['teamname']
-
                 client.join_map(map_id, teamname)
+                
 
-                return render(request, 'map.html', {'map_id': map_id, 'teamname': teamname})
+
+                return render(request, 'map.html', {'map_id': map_id, 'teamname': teamname, 'background_image': background_image})
 
 
 
@@ -118,10 +119,10 @@ def main_view(request):
     join_map_form = JoinMapForm()
     
     maps = client.list_maps().get("Message", None)
-    
 
     new_map_response_data = request.session.pop('new_map_response', {})
     new_map_response = new_map_response_data.get("Message", None)
+
 
 
     leave_map_response_data = request.session.pop('leave_map_response', {})
