@@ -1,0 +1,36 @@
+<!-- game_app/templates/exit_on_close.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exit on Close</title>
+</head>
+<body>
+
+<script>
+window.addEventListener('beforeunload', function (event) {
+    // Send an exit command to the server when the window is closed
+    const exitCommand = {
+        'command': 'E',
+    };
+
+    fetch('http://localhost:1423', {
+        method: 'POST',
+        body: JSON.stringify(exitCommand),
+        headers: {
+            'Content-Type': 'application/json',
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log(data.Message);  // Log the server response message
+    })
+    .catch(error => {
+        console.error('Error:', error);
+    });
+});
+</script>
+
+</body>
+</html>

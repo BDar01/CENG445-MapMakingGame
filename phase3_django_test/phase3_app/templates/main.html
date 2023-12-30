@@ -1,0 +1,16 @@
+<html>
+    <body>
+        <h1>Hello {{username}}. Welcome to the our game.</h1>
+        <button id="logout-btn">Logout</button>
+    </body>
+</html>
+
+
+<script>
+    // Get references to the buttons\
+    var logoutButton = document.getElementById("logout-btn");
+
+    logoutButton.addEventListener("click", function() {
+        window.location.href = "{% url 'logout' %}"; // Replace 'login' with your actual URL
+    });
+</script>

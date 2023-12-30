@@ -263,21 +263,23 @@ class GameServer:
                     return json.dumps({"Message": f"User '{user.username}' not player on Map {map_id}."})
 
             elif data['command'] == "LO":
-                user_id = data["user_id"]
+                user_id = data.get('user_id')
+                username = self.user_factory.user_list[user_id].username
                 self.user_factory.user_list[user_id].logout()
-                del self.user_sockets[thread_local.authenticated_user]
+                del self.user_sockets[username]
                 self.authenticated_user = None
                 response = json.dumps({"Message": "Logged out"})
                 return response
 
             elif data['command'] == "E":
                 thread_local.is_connected = False
-                del self.user_sockets[thread_local.authenticated_user]
+                username = self.user_factory.user_list[user_id].username
+                del self.user_sockets[user]
                 response = json.dumps({"Message": "Exit"})
                 return response
 
             else:
-                return json.dumps({"Message": "Invalid command. Try again."})
+                return json.dumps({"Message": "Invalid command 2. Try again."})
 
         except Exception as e:
             return json.dumps({"Message": f"Error: {str(e)}"})
@@ -303,7 +305,8 @@ class GameServer:
                                     self.user_sockets[thread_local.authenticated_user] = client_socket
                                     token = user.login()
                                     user = self.user_factory.user_list[user_id]
-                                    response = json.dumps({'Message' : "Logged in", 'user_id': user_id, 'token': token})
+                                    username = user.username
+                                    response = json.dumps({'Message' : "Logged in", 'user_id': user_id, 'token': token, 'username': username})
                                     client_socket.send(response.encode())
                                 else:
                                     response = json.dumps({'Message': "Authentication failed"})
@@ -328,13 +331,15 @@ class GameServer:
                                 user_id = data["user_id"]
                                 token = data["token"]
 
-                                if (self.user_factory.user_list[user_id].checksession(token)):
-
-                                    response = json.dumps({'Message' : "Logged in", 'user_id': user_id, 'token': token})
+                                if (user_id and token and self.user_factory.user_list[user_id].checksession(token)):
 
                                     thread_local.authenticated_user = self.user_factory.user_list[user_id].username
 
                                     self.user_sockets[thread_local.authenticated_user] = client_socket
+
+                                    username = self.user_factory.user_list[user_id].username
+
+                                    response = json.dumps({'Message' : "Logged in", 'user_id': user_id, 'token': token, 'username': username})
 
                                     client_socket.send(response.encode())  
 
@@ -349,7 +354,7 @@ class GameServer:
                                 client_socket.send(response.encode())
 
                             else:
-                                response = json.dumps({'Message' : "Invalid command. Try again."})
+                                response = json.dumps({'Message' : "Invalid command 1. Try again."})
                                 client_socket.send(response.encode())
 
                     except socket.timeout:
@@ -363,6 +368,7 @@ class GameServer:
                     try:
                         client_socket.settimeout(1.0)
                         response = client_socket.recv(1024).decode()
+                        print(response)
                         data = json.loads(response)
             
                         if data:
