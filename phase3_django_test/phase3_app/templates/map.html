@@ -35,6 +35,13 @@
         <h1>Welcome to map {{map_id}}</h1>
         <h1>Your team is {{teamname}}</h1>
         <button id = "leavemap-btn">Leave Map</button>
+        <svg height="1000" width="1000">
+            {% for obj in objects %}
+            <text x="{{ obj.2 }}" y="{{ obj.3 }}" fill="red" font-size="10px">{{ obj.1 }}</text>
+            <circle cx="{{ obj.2 }}" cy="{{ obj.3 }}" r="5" fill="red"/>
+            {% endfor %}
+        </svg>
+        <h1>{{objects}}</h1> 
     </body>
 </html>
 

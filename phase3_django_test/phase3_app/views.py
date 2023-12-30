@@ -61,7 +61,7 @@ def new_map(request):
 
     return redirect('main')
 
-def join_map(request, map_id):
+async def join_map(request, map_id):
     if request.method == 'POST':
         form = JoinMapForm(request.POST)
         background_image = request.POST.get('background_image', '')
@@ -72,9 +72,11 @@ def join_map(request, map_id):
                 teamname = form.cleaned_data['teamname']
                 client.join_map(map_id, teamname)
                 
+                querymap_response = client.query_map().get("Message", None)
+                
 
 
-                return render(request, 'map.html', {'map_id': map_id, 'teamname': teamname, 'background_image': background_image})
+                return render(request, 'map.html', {'map_id': map_id, 'teamname': teamname, 'background_image': background_image, 'objects': querymap_response})
 
 
 
@@ -178,7 +180,6 @@ def login_user(request):
                 username = form.cleaned_data['username']
                 password = form.cleaned_data['password']
                 response = client.login_user(username, password)
-                print(response)
 
                 if response['Message'] == 'Logged in':
                     client.logged_in = True

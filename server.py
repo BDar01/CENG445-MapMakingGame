@@ -228,7 +228,7 @@ class GameServer:
                 user = self.user_factory.user_list[user_id]
                 if map_id in list(self.map_factory.map_list.keys()):
                     my_map = self.map_factory.map_list[map_id]
-                    my_map.initializeObjects()
+                    #my_map.initializeObjects()
                     p = my_map.join(user.username, teamname)
                     if(p == None):
                         return json.dumps({"Message":"User already exists in the map."})

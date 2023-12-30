@@ -65,7 +65,7 @@ class GameClient:
         return cursor.fetchone() is not None
         
     def save_token(self, user_id, token):
-        with sqlite3.connect('client1.sql3') as db:
+        with sqlite3.connect('client.sql3') as db:
             c = db.cursor()
 
             try:
@@ -86,7 +86,7 @@ class GameClient:
                 print(f"Error executing SQL query: {e}")
 
     def load_token(self):
-         with sqlite3.connect('client1.sql3') as db: 
+         with sqlite3.connect('client.sql3') as db: 
             c = db.cursor()
 
             if self.table_exists(c, "tokens"):
@@ -151,6 +151,16 @@ class GameClient:
             self.user_id = None
 
         return response
+    
+
+    def query_map(self):
+        command = {
+            'command': "querymap",
+            'user_id': self.user_id
+        }
+
+        return self.execute_command(command)
+
     def leave_map(self, map_id, teamname):
         command = {
             'command': "leavemap",

@@ -3,6 +3,7 @@ import numpy as np
 import time
 import hashlib
 import uuid
+import threading
 
 
 
@@ -315,7 +316,7 @@ class Freezer(Object):
         ### HEALTH OBJECT ###
 class Health(Object):
     def __init__(self, m = 30, inf = True):
-        super().__init__("Freezer", "Health")
+        super().__init__("Health", "Health")
         self.health = m
         self.cap = inf
 
@@ -382,7 +383,8 @@ class Map:
         if (not self.initialized):
             for obj in self.objects_list:
                 if(obj[2].__class__.__name__ != 'Player'):
-                    obj[2].run(self)
+                    objectThread = threading.Thread(target=obj[2].run, args=(self,))
+                    objectThread.start
             self.initialized = True
 
     def parse_config(self, config):
@@ -462,6 +464,7 @@ class Map:
         if(r == 0):
            r = self.player_vision
 
+        
         new_objects_list = [obj for obj in self.objects_list if (max(0, x-r) <= obj[0] <= min(x+r,self.width) and (max(0,y-r) <= obj[1] <= min(self.height,y+r)))]
         return new_objects_list
     
@@ -479,7 +482,7 @@ class Map:
             self.teams[team] = team_map
 
         p = Player(player, team, self.player_health, self.player_repo[:], self)
-        self.objects_list.append((0, 0, p))
+        self.objects_list.append((self.height/2, self.width/2, p))
         #self.teammap(team).addPlayerObject(0, 0, p)
         return p
 
