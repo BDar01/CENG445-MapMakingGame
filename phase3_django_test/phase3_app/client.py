@@ -1,30 +1,30 @@
 import threading
-import asyncio
 import sqlite3
 import socket
 import json
 import sys
 
 class GameClient:
-    _instance = None
+    _instances = {}
     _instance_lock = threading.Lock()
-
-    def __new__(cls, *args, **kwargs):
+    
+    def __new__(cls, cookie_value=None):
         with cls._instance_lock:
-            if not cls._instance:
-                print("Creating a new GameClient instance.")
-                cls._instance = super(GameClient, cls).__new__(cls)
-                cls._instance._initialized = False
-            return cls._instance
+            if cookie_value not in cls._instances:
+                print(f"Creating a new GameClient instance for cookie: {cookie_value}")
+                cls._instances[cookie_value] = super(GameClient, cls).__new__(cls)
+                cls._instances[cookie_value]._initialized = False
+                cls._instances[cookie_value].cookie_value = cookie_value
+            return cls._instances[cookie_value]
 
-    def __init__(self, host, port):
+    def __init__(self, cookie_value=None):
         with self._instance_lock:
             if self._initialized:
                 return
             
             self._initialized = True
             self.logged_in = False
-            self.server_address = (host, port)
+            self.server_address = ('localhost', 1423)
             self.socket = None
             self.user_id = ""
             self.token = -1
@@ -32,7 +32,8 @@ class GameClient:
             self.connected = False
             self.username = None
             self.load_token()
-
+            self.cookie_value = cookie_value  # Store the cookie value
+        
             self.socket_lock = threading.Lock()
             self.notification_thread_flag = threading.Event()
 

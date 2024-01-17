@@ -4,43 +4,51 @@ from django.shortcuts import render, redirect
 from asgiref.sync import sync_to_async
 from django.contrib import messages
 from .client import GameClient 
+import secrets
 import json
-from django.http import HttpResponse, JsonResponse
+from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
+
 def root_view(request):
-    client = GameClient('localhost',1423)
+    # Set a cookie for every browser session
+    if not request.COOKIES.get('my_game_cookie'):
+        cookie_val = secrets.token_hex(16)  # Generate a random hexadecimal string (32 characters)
+        response = render(request, 'root.html')
+        response.set_cookie('my_game_cookie', cookie_val, max_age=None)  # None means the cookie will expire when the user closes the browser
+        return response
+
+    # Retrieve the cookie in the GameClient initialization
+    client = GameClient(request.COOKIES.get('my_game_cookie'))
     client.load_token()
+
     if client.token != -1:
         response = client.send_command(json.dumps({'command': "C", 'user_id': client.user_id, 'token': client.token}))
         print("Pre-check ", response)
         if "Message" in response and response["Message"] == "Logged in":
             client.logged_in = True
-            #if 'username' in response:
             client.username = response['username']
             messages.success(request, response['Message'])
             return redirect('main')
-            #else:
-                # Handle the case where 'username' is not present in the response
-                #messages.error(request, 'Username not found in the server response.')
-                #return render(request, 'root.html')
         else:
             client.token = -1
             return render(request, 'root.html')
     else:
         return render(request, 'root.html')
-    
+
+
 def list_maps(request):
-    client = GameClient('localhost',1423)
+    client = GameClient(request.COOKIES.get('my_game_cookie'))
 
     response = client.list_maps()
+
 
 def new_map(request):
     if request.method == 'POST':
         form = NewMapForm(request.POST)
         try: 
-            client = GameClient('localhost', 1423)
+            client = GameClient(request.COOKIES.get('my_game_cookie'))
 
             if form.is_valid():
                 name = form.cleaned_data['name']
@@ -61,12 +69,13 @@ def new_map(request):
 
     return redirect('main')
 
+
 async def join_map(request, map_id):
     if request.method == 'POST':
         form = JoinMapForm(request.POST)
         background_image = request.POST.get('background_image', '')
         try: 
-            client = GameClient('localhost', 1423)
+            client = GameClient(request.COOKIES.get('my_game_cookie'))
 
             if form.is_valid():
                 teamname = form.cleaned_data['teamname']
@@ -94,7 +103,7 @@ def leave_map(request):
     teamname = request.GET.get('teamname', '')
 
     try: 
-        client = GameClient('localhost', 1423)
+        client = GameClient(request.COOKIES.get('my_game_cookie'))
         response = client.leave_map(map_id, teamname)
 
         request.session['leave_map_response'] = response
@@ -109,11 +118,9 @@ def leave_map(request):
         return redirect('main')
 
 
-
-
 def main_view(request):
     
-    client = GameClient('localhost',1423)
+    client = GameClient(request.COOKIES.get('my_game_cookie'))
     if not client.logged_in:
         return redirect('root')
     
@@ -140,7 +147,7 @@ def register_user(request):
             # Check if session_key exists or create a new session
 
             try:
-                client = GameClient('localhost', 1423)
+                client = GameClient(request.COOKIES.get('my_game_cookie'))
                 username = form.cleaned_data['username']
                 password = form.cleaned_data['password']
                 email = form.cleaned_data['email']
@@ -173,7 +180,7 @@ def login_user(request):
     if request.method == 'POST':
 
         try:
-            client = GameClient('localhost', 1423)
+            client = GameClient(request.COOKIES.get('my_game_cookie'))
             
             form = LoginForm(request.POST)
             if form.is_valid():
@@ -202,9 +209,10 @@ def login_user(request):
     form = LoginForm()
     return render(request, 'login.html', {'form': form})
 
+
 def logout_user(request):
     try:
-        client = GameClient('localhost', 1423)
+        client = GameClient(request.COOKIES.get('my_game_cookie'))
 
         if client.logged_in:
             response = client.logout_user()
@@ -223,6 +231,7 @@ def logout_user(request):
         messages.error(request, 'Internal Server Error')
 
     return redirect('root')
+
 
 @csrf_exempt
 @require_POST
