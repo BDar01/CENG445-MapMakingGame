@@ -15,6 +15,14 @@
 
         <button id="logout-btn">Logout</button>
         <button id="newmap-btn">New Map</button>
+        <form id="new-map-form" method="post" style="display: none;" action="{% url 'new_map' %}">
+            {% csrf_token %}
+            {{ new_map_form.as_p }}
+            <button type="submit">Submit</button>
+        </form>
+        {% if new_map_response %}
+            <h1>{{ new_map_response }}</h1>
+        {% endif %}
         {% if maps %}
             {% for map in maps %}
                 <div style="background-color: red;">
@@ -31,15 +39,6 @@
             {% endfor %}
         {% else %}
             <h1>No maps found!</h1>
-        {% endif %}
-
-        <form id="new-map-form" method="post" style="display: none;" action="{% url 'new_map' %}">
-            {% csrf_token %}
-            {{ new_map_form.as_p }}
-            <button type="submit">Submit</button>
-        </form>
-        {% if new_map_response %}
-            <h1>{{ new_map_response }}</h1>
         {% endif %}
 
         {% if leave_map_response %}
@@ -72,3 +71,4 @@
 {% block extra_scripts %}
     {% include 'exit_on_close.html' %}
 {% endblock %}
+

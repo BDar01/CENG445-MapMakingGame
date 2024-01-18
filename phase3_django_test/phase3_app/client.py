@@ -182,6 +182,15 @@ class GameClient:
 
         return self.execute_command(command)
     
+    def move_player(self, direction):
+        command = {
+            'command': "move",
+            'user_id': self.user_id,
+            'direction': direction
+        }
+
+        return self.execute_command(command)
+    
     def list_maps(self):
         command = {
             'command': "listmaps"
@@ -218,7 +227,7 @@ class GameClient:
                             server_shutdown_thread = threading.Thread(target=self.server_shutdown)
                             server_shutdown_thread.start()
                         else:
-                            self.print_notification(data)
+                            print("Data: ", data)
 
             except socket.timeout:
                 pass

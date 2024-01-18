@@ -1,12 +1,15 @@
 # game_app/views.py
 from .forms import RegistrationForm, LoginForm, NewMapForm, JoinMapForm
+from django.http import JsonResponse, HttpResponse, HttpResponseBadRequest
 from django.shortcuts import render, redirect
-from asgiref.sync import sync_to_async
 from django.contrib import messages
+from django.template import loader
+
+from asgiref.sync import sync_to_async
 from .client import GameClient 
 import secrets
 import json
-from django.http import JsonResponse
+
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
@@ -43,7 +46,6 @@ def list_maps(request):
 
     response = client.list_maps()
 
-
 def new_map(request):
     if request.method == 'POST':
         form = NewMapForm(request.POST)
@@ -52,8 +54,12 @@ def new_map(request):
 
             if form.is_valid():
                 name = form.cleaned_data['name']
-                size = form.cleaned_data['size']
                 type = form.cleaned_data['type']
+                size = None
+                if type == "arena":
+                    size = '612x408'
+                elif type == "labyrinth":
+                    size = '1300x975'
 
                 response = client.new_map(name, size, type)
                 request.session['new_map_response'] = response
@@ -70,7 +76,8 @@ def new_map(request):
     return redirect('main')
 
 
-async def join_map(request, map_id):
+def join_map(request, map_id):    
+    # Check if the user has already joined a map
     if request.method == 'POST':
         form = JoinMapForm(request.POST)
         background_image = request.POST.get('background_image', '')
@@ -79,15 +86,12 @@ async def join_map(request, map_id):
 
             if form.is_valid():
                 teamname = form.cleaned_data['teamname']
-                client.join_map(map_id, teamname)
+                message = client.join_map(map_id, teamname)
+                player_name = message["Message"].split(" ")[1]
                 
                 querymap_response = client.query_map().get("Message", None)
-                
 
-
-                return render(request, 'map.html', {'map_id': map_id, 'teamname': teamname, 'background_image': background_image, 'objects': querymap_response})
-
-
+                return render(request, 'map.html', {'map_id': map_id, 'teamname': teamname, 'playername': player_name, 'background_image': background_image, 'objects': querymap_response})
 
         except Exception as e:
             print(f"Error: {e}")
@@ -97,6 +101,59 @@ async def join_map(request, map_id):
 
     return redirect('main')
 
+def update_map(request):
+    try:
+        # Get the map_id, teamname, and background_image from the request parameters
+        map_id = request.GET.get('map_id')
+        teamname = request.GET.get('teamname')
+        playername = request.GET.get('playername')
+        background_image = request.GET.get('background_image')
+
+        client = GameClient(request.COOKIES.get('my_game_cookie'))
+        querymap_response = client.query_map().get("Message", None)
+            
+        # Load the template and render it with the updated data
+        template = loader.get_template('map.html')
+        html_content = template.render({'map_id': map_id, 'teamname': teamname, 'playername': playername, 'background_image': background_image, 'objects': querymap_response}, request)
+
+        return HttpResponse(html_content)
+
+    except Exception as e:
+        print(f"Error: {e}")
+        messages.error(request, 'Internal Server Error')
+        # Handle exceptions and return an error response if needed
+        return HttpResponseBadRequest(str(e))
+
+def move_player(request):
+    if request.method == 'GET':
+        map_id = request.GET.get('map_id')
+        teamname = request.GET.get('teamname')
+        playername = request.GET.get('playername')
+        background_image = request.GET.get('background_image')
+        direction = request.GET.get('direction')
+        try: 
+            client = GameClient(request.COOKIES.get('my_game_cookie'))
+
+            move_response = client.move_player(direction)
+            messages.success(request, move_response['Message'])
+                
+            querymap_response = client.query_map().get("Message", None)
+
+            # Load the template and render it with the updated data
+            template = loader.get_template('map.html')
+            html_content = template.render({'map_id': map_id, 'teamname': teamname, 'playername': playername, 'background_image': background_image, 'objects': querymap_response}, request)
+
+            return HttpResponse(html_content)
+
+        except Exception as e:
+            print(f"Error: {e}")
+            messages.error(request, 'Internal Server Error')
+            # Handle exceptions and return an error response if needed
+            return HttpResponseBadRequest(str(e))
+    else:
+        messages.error(request, 'Invalid registration form. Please check your input.')
+
+    return redirect('main')
 
 def leave_map(request):
     map_id = request.GET.get('map_id', '')
@@ -109,8 +166,6 @@ def leave_map(request):
         request.session['leave_map_response'] = response
 
         return redirect('main')
-
-
 
     except Exception as e:
         print(f"Error: {e}")

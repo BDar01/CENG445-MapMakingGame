@@ -471,7 +471,7 @@ class Map:
     def join(self, player, team):
         for object in self.objects_list:
             if(object[2].__class__.__name__ == 'Player' and object[2].user == player): #If this function returns none player exists in the map
-                return None
+                return object[2].id
 
         if (team not in self.teams):  
             team_map = Map(f'{self.name} (Team View {team})', (self.width, self.height), self.config)

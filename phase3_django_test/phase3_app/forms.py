@@ -8,7 +8,6 @@ class RegistrationForm(forms.Form):
 
 class NewMapForm(forms.Form):
     name = forms.CharField(max_length=50)
-    size = forms.CharField(max_length=12)
     type = forms.CharField(max_length=50)
 
 class JoinMapForm(forms.Form):

@@ -230,13 +230,13 @@ class GameServer:
                     my_map = self.map_factory.map_list[map_id]
                     #my_map.initializeObjects()
                     p = my_map.join(user.username, teamname)
-                    if(p == None):
-                        return json.dumps({"Message":"User already exists in the map."})
+                    if(type(p) == int):
+                        return json.dumps({"Message":f"User {p} already exists in the map."})
                     else:
                         user.player = p
                         player = user.player
                         self.send_notification(user.username, map_id, player.map.teams[player.team].objects_list, player.team, lock) # Notify not working properly yet
-                        return json.dumps({"Message": f"User '{user.username}' (Team member of {teamname}) joined to '{my_map.name}'."})
+                        return json.dumps({"Message": f"Player '{player.id}' (Team member of {teamname}) joined to '{my_map.name}'."})
 
                 else:
                     return json.dumps({"Message": f"Map {map_id} not found"})
