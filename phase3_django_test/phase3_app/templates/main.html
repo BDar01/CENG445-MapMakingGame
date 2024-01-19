@@ -64,7 +64,12 @@
         newMapForm.style.display = "block";
     });
 
-    
+    function refresh() {
+        window.location.reload()
+    }
+
+    // Set an interval to periodically call the updateMapContent function (every 5 seconds in this example)
+    setInterval(refresh, 15000);
 </script>
 {% endblock %}
 

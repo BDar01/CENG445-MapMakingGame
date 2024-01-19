@@ -167,8 +167,16 @@ class GameServer:
                 if user.player:
                     player = user.player
                     player.move(direction)
-                    self.send_notification(user.username, player.map.map_id, player.map.teams[player.team].objects_list, player.team, lock) # Notify not working properly yet
-                    return json.dumps({"Message": f"Player {user.username} moved {direction}"})
+                    if direction == 'S':
+                        direction = 'Up'
+                    elif direction == 'N':
+                        direction = 'Down'
+                    elif direction == 'E':
+                        direction = 'Right'
+                    elif direction == 'W':
+                        direction = 'Left'
+                    #self.send_notification(user.username, player.map.map_id, player.map.teams[player.team].objects_list, player.team, lock) # Notify not working properly yet
+                    return json.dumps({"Message": f"Player {player.id} moved {direction}"})
                 else:
                     return json.dumps({"Message": f"Player for user {user.username} doesn't exist. Please join a map"})
 
@@ -181,9 +189,9 @@ class GameServer:
                     player = user.player
                     flag = player.drop(object_type)
                     if (flag):
-                        return json.dumps({"Message": f"Player {user.username} dropped {object_type}"})
+                        return json.dumps({"Message": f"Player {player.id} dropped {object_type}"})
                     else:
-                        return json.dumps({"Message": f"Player {user.username} has no more {object_type}s"})
+                        return json.dumps({"Message": f"Player {player.id} has no more {object_type}s"})
                 else:
                     return json.dumps({"Message": f"Player for user {user.username} doesn't exist. Please join a map"})
 
@@ -202,7 +210,7 @@ class GameServer:
                     if(x == -1 and y == -1):
                         x, y = player.getPositionOfPlayer()
                     objects_in_radius = player.query(int(x), int(y), int(radius))
-                    self.send_notification(user.username, player.map.map_id, player.map.teams[player.team].objects_list, player.team, lock) # Notify not working properly yet
+                    #self.send_notification(user.username, player.map.map_id, player.map.teams[player.team].objects_list, player.team, lock) # Notify not working properly yet
                     return json.dumps({"Message":[(obj[2].id, obj[2].type, obj[0], obj[1]) for obj in objects_in_radius]})
                 else:
                     return json.dumps({"Message": f"Player for user '{user.username}' doesn't exist. Please join a map"})
@@ -235,7 +243,7 @@ class GameServer:
                     else:
                         user.player = p
                         player = user.player
-                        self.send_notification(user.username, map_id, player.map.teams[player.team].objects_list, player.team, lock) # Notify not working properly yet
+                        #self.send_notification(user.username, map_id, player.map.teams[player.team].objects_list, player.team, lock) # Notify not working properly yet
                         return json.dumps({"Message": f"Player '{player.id}' (Team member of {teamname}) joined to '{my_map.name}'."})
 
                 else:

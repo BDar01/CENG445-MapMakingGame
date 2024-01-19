@@ -21,6 +21,11 @@
             overflow: hidden;
         }
 
+        text {
+            font-size: 16px;
+            color: #333333;
+        }
+
         h1 {
             font-size: 24px;
             color: #333333;
@@ -78,17 +83,13 @@
 <body>
     <h1>Welcome to map: {{map_id}} & team: {{teamname}}, player no: {{playername}}</h1>
     <h1 id="objects-data">Map Objects: {{objects}}</h1>
-    <button id="leavemap-btn">Leave Map</button>
+    <text><b> Commands: </b></text> <button id="leavemap-btn">Leave Map</button> <text> Drop: </text> <button id="dropmine-btn">Mine</button> <button id="dropfrzr-btn">Freezer</button> <button id="drophlth-btn">Health</button><br>
+    <text><b> Messages: </b> {{msg}} </text>
     <div id="map-svg-container">
         <svg id="map-svg">
             {% for obj in objects %}
-            {% if background_image == "labyrinth" %}
             <text x="{{ obj.2 }}" y="{{ obj.3 }}" fill="red">{{ obj.1 }} {{obj.0}}</text>
             <circle cx="{{ obj.2 }}" cy="{{ obj.3 }}" r="5" fill="red"/>
-            {% else %}
-            <text x="{{ obj.2 }}" y="{{ obj.3 }}" fill="red">{{ obj.1 }} {{obj.0}}</text>
-            <circle cx="{{ obj.2 }}" cy="{{ obj.3 }}" r="5" fill="red"/>
-            {% endif %}
             {% endfor %}
         </svg>
     </div>
@@ -129,6 +130,9 @@
     });
 
     var leaveMapButton = document.getElementById("leavemap-btn")
+    var dropMineButton = document.getElementById("dropmine-btn")
+    var dropFreezerButton = document.getElementById("dropfrzr-btn")
+    var dropHealthButton = document.getElementById("drophlth-btn")
 
     var mapId = "{{map_id}}"
     var teamName = "{{teamname}}"
@@ -137,12 +141,61 @@
         window.location.href = "{% url 'leave_map' %}?map_id="+ mapId + "&teamname=" + teamName;
     });
 
+    dropMineButton.addEventListener("click", function() {
+        $.ajax({
+            url: "{% url 'drop_object' %}?map_id=" + mapId + "&teamname=" + teamName + "&playername=" + playerName + "&background_image={{background_image}}" + "&object=" + "Mine",
+            type: 'GET',
+            dataType: 'html',  // Expect HTML response
+            success: function(data) {
+                console.log("Value of msg:", "{{ msg }}");
+                // On success, update the entire HTML content with the new data
+                window.location.reload()
+            },
+            error: function(error) {
+                console.error("Error moving player:", error);
+            }
+        })
+    });
+    
+    dropFreezerButton.addEventListener("click", function() {
+        $.ajax({
+            url: "{% url 'drop_object' %}?map_id=" + mapId + "&teamname=" + teamName + "&playername=" + playerName + "&background_image={{background_image}}" + "&object=" + "Freezer",
+            type: 'GET',
+            dataType: 'html',  // Expect HTML response
+            success: function(data) {
+                console.log("Value of msg:", "{{ msg }}");
+                // On success, update the entire HTML content with the new data
+                window.location.reload()
+            },
+            error: function(error) {
+                console.error("Error moving player:", error);
+            }
+        })
+    });
+
+    dropHealthButton.addEventListener("click", function() {
+        $.ajax({
+            url: "{% url 'drop_object' %}?map_id=" + mapId + "&teamname=" + teamName + "&playername=" + playerName + "&background_image={{background_image}}" + "&object=" + "Health",
+            type: 'GET',
+            dataType: 'html',  // Expect HTML response
+            success: function(data) {
+                console.log("Value of msg:", "{{ msg }}");
+                // On success, update the entire HTML content with the new data
+                window.location.reload()
+            },
+            error: function(error) {
+                console.error("Error moving player:", error);
+            }
+        })
+    });
+
     function movePlayer(direction) {
         $.ajax({
             url: "{% url 'move_player' %}?map_id=" + mapId + "&teamname=" + teamName + "&playername=" + playerName + "&background_image={{background_image}}" + "&direction=" + direction,
             type: 'GET',
             dataType: 'html',  // Expect HTML response
             success: function(data) {
+                console.log("Received data:", data);
                 // On success, update the entire HTML content with the new data
                 window.location.reload()
             },

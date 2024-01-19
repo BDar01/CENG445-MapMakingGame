@@ -88,10 +88,15 @@ def join_map(request, map_id):
                 teamname = form.cleaned_data['teamname']
                 message = client.join_map(map_id, teamname)
                 player_name = message["Message"].split(" ")[1]
+
+                # Retrieve the message from the session
+                msg = request.session.pop('msg', None)
+                if msg == None:
+                    msg = 'Empty'
                 
                 querymap_response = client.query_map().get("Message", None)
 
-                return render(request, 'map.html', {'map_id': map_id, 'teamname': teamname, 'playername': player_name, 'background_image': background_image, 'objects': querymap_response})
+                return render(request, 'map.html', {'map_id': map_id, 'teamname': teamname, 'playername': player_name, 'background_image': background_image, 'objects': querymap_response, 'msg': msg})
 
         except Exception as e:
             print(f"Error: {e}")
@@ -123,6 +128,40 @@ def update_map(request):
         messages.error(request, 'Internal Server Error')
         # Handle exceptions and return an error response if needed
         return HttpResponseBadRequest(str(e))
+    
+def drop_object(request):
+    if request.method == 'GET':
+        map_id = request.GET.get('map_id')
+        teamname = request.GET.get('teamname')
+        playername = request.GET.get('playername')
+        background_image = request.GET.get('background_image')
+        object = request.GET.get('object')
+        try: 
+            client = GameClient(request.COOKIES.get('my_game_cookie'))
+
+            drop_response = client.drop_object(object)
+            msg = drop_response['Message']
+            print("Drop_object response: ", msg)
+            request.session['msg'] = msg  # Set the message in the session
+                
+            querymap_response = client.query_map().get("Message", None)
+
+            # Load the template and render it with the updated data
+            template = loader.get_template('map.html')
+            html_content = template.render({'map_id': map_id, 'teamname': teamname, 'playername': playername, 'background_image': background_image, 'objects': querymap_response}, request)
+
+            return HttpResponse(html_content)
+
+        except Exception as e:
+            print(f"Error: {e}")
+            messages.error(request, 'Internal Server Error')
+            # Handle exceptions and return an error response if needed
+            return HttpResponseBadRequest(str(e))
+    else:
+        messages.error(request, 'Invalid registration form. Please check your input.')
+
+    return redirect('main')
+
 
 def move_player(request):
     if request.method == 'GET':
@@ -135,7 +174,9 @@ def move_player(request):
             client = GameClient(request.COOKIES.get('my_game_cookie'))
 
             move_response = client.move_player(direction)
-            messages.success(request, move_response['Message'])
+            msg = move_response['Message']
+            print("Move_player response: ", msg)
+            request.session['msg'] = msg  # Set the message in the session
                 
             querymap_response = client.query_map().get("Message", None)
 

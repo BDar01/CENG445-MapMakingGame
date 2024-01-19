@@ -241,13 +241,13 @@ class Player(Object):
                         nx = 0
                         ny = y+5
                     self.map.addHealthObject(nx, ny, drop_obj[1], drop_obj[2])
-                    self.map.teams[self.team].addHealthObject(nx, ny, drop_obj[1], drop_obj[2])
+                    #self.map.teams[self.team].addHealthObject(nx, ny, drop_obj[1], drop_obj[2])
                 if (drop_obj[0] == "Mine"):
-                    self.map.addMineObject(x, y, drop_obj[1], drop_obj[2], drop_obj[3])
-                    self.map.teams[self.team].addMineObject(x, y, drop_obj[1], drop_obj[2], drop_obj[3])
+                    self.map.addMineObject(x, y, self.id, drop_obj[1], drop_obj[2], drop_obj[3])
+                    #self.map.teams[self.team].addMineObject(x, y, self.id, drop_obj[1], drop_obj[2], drop_obj[3])
                 if (drop_obj[0] == "Freezer"):
-                    self.map.addFreezerObject(x, y, drop_obj[1], drop_obj[2], drop_obj[3])
-                    self.map.teams[self.team].addFreezerObject(x, y, drop_obj[1], drop_obj[2], drop_obj[3])
+                    self.map.addFreezerObject(x, y, self.id, drop_obj[1], drop_obj[2], drop_obj[3])
+                    #self.map.teams[self.team].addFreezerObject(x, y, self.id, drop_obj[1], drop_obj[2], drop_obj[3])
             
                 self.repo.remove(drop_obj)
                 flag = True
@@ -257,14 +257,15 @@ class Player(Object):
         
         ### MINE OBJECT ###
 class Mine(Object):
-    def __init__(self, p = 5, d = 10, k = 1000):
+    def __init__(self, plyr=None, p = 5, d = 10, k = 1000):
         super().__init__("Mine", "Mine")
         self.prox = p
         self.dmg = d
         self.itr = k
+        self.plyr = plyr
 
     def __str__(self):
-        output = "Mine: " + "[Proximity: " + str(self.prox) + ", Damage: " + str(self.dmg) + ", Iteration: " + str(self.itr) + "]"
+        output = "Mine: " + "[Proximity: " + str(self.prox) + ", Damage: " + str(self.dmg) + ", Iteration: " + str(self.itr) + ", Player: " + str(self.plyr) + "]"
         return output
 
     def run(self, map):
@@ -276,7 +277,8 @@ class Mine(Object):
         exploded = False
         for i in range(self.itr):
             for obj in map.query(x, y, self.prox):
-                if(obj[2].type == "Player"):
+                if(obj[2].type == "Player" and obj[2].id != self.plyr):
+                    print("Exploded on player id: ", obj[2].id)
                     obj[2].health -= self.dmg
                     exploded = True
             if(exploded):
@@ -286,14 +288,15 @@ class Mine(Object):
 
         ### FREEZER OBJECT ###
 class Freezer(Object):
-    def __init__(self, p = 5, d = 10, k = 1000):
+    def __init__(self, plyr=None, p = 5, d = 10, k = 1000):
         super().__init__("Freezer", "Freezer")
         self.prox = p
         self.stun = d
         self.itr = k
+        self.plyr = plyr
 
     def __str__(self):
-        output = "Freezer: " + "[Proximity: " + str(self.prox) + ", Damage: " + str(self.stun) + ", Iteration: " + str(self.itr) + "]"
+        output = "Freezer: " + "[Proximity: " + str(self.prox) + ", Damage: " + str(self.stun) + ", Iteration: " + str(self.itr) + ", Player: " + str(self.plyr) + "]"
         return output
     
     def run(self, map):
@@ -305,7 +308,8 @@ class Freezer(Object):
         stunned = False
         for i in range(self.itr):
             for obj in map.query(x, y, self.prox):
-                if(obj[2].type == "Player"):
+                if(obj[2].type == "Player" and obj[2].id != self.plyr):
+                    print("Stunned on player id: ", obj[2].id)
                     stunned = True
                     obj[2].stun(self.stun)
             if(stunned):
@@ -423,13 +427,13 @@ class Map:
         self.objects_list.append((x, y, healthObject))
         healthObject.run(self)
     
-    def addMineObject(self, x, y, p, d, k):
-        mineObject = Mine(p, d, k)
+    def addMineObject(self, x, y, plyr, p, d, k):
+        mineObject = Mine(plyr, p, d, k)
         self.objects_list.append((x, y, mineObject))
         mineObject.run(self)
 
-    def addFreezerObject(self, x, y, p, s, k):
-        freezerObject =  Freezer(p, s, k)
+    def addFreezerObject(self, x, y, plyr, p, s, k):
+        freezerObject =  Freezer(plyr, p, s, k)
         self.objects_list.append((x, y, freezerObject))
         freezerObject.run(self)
 

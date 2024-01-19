@@ -182,6 +182,15 @@ class GameClient:
 
         return self.execute_command(command)
     
+    def drop_object(self, object):
+        command = {
+            'command': "drop",
+            'user_id': self.user_id,
+            'object_type': object
+        }
+
+        return self.execute_command(command)
+
     def move_player(self, direction):
         command = {
             'command': "move",
