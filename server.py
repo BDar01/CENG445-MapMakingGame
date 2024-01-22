@@ -178,7 +178,7 @@ class GameServer:
                     #self.send_notification(user.username, player.map.map_id, player.map.teams[player.team].objects_list, player.team, lock) # Notify not working properly yet
                     return json.dumps({"Message": f"Player {player.id} moved {direction}"})
                 else:
-                    return json.dumps({"Message": f"Player for user {user.username} doesn't exist. Please join a map"})
+                    return json.dumps({"Message": f"Player for user doesn't exist. Please join a map"})
 
             elif data['command'] == "drop":
                 if len(data.items()) != 3:
@@ -193,8 +193,18 @@ class GameServer:
                     else:
                         return json.dumps({"Message": f"Player {player.id} has no more {object_type}s"})
                 else:
-                    return json.dumps({"Message": f"Player for user {user.username} doesn't exist. Please join a map"})
-
+                    return json.dumps({"Message": f"Player for user doesn't exist. Please join a map"})
+            
+            elif data['command'] == "show_repo":
+                user_id = data['user_id']
+                user = self.user_factory.user_list[user_id]
+                if user.player:
+                    player = user.player
+                    repo = player.show_repo()
+                    return json.dumps({"Message":repo})
+                else:
+                    return json.dumps({"Message": f"Player for user doesn't exist. Please join a map"})
+                
             elif data['command'] == "querymap":
                 if len(data.items()) == 5:
                     user_id, x, y, radius = data['user_id'], data['x'], data['y'], data['radius']
@@ -213,7 +223,7 @@ class GameServer:
                     #self.send_notification(user.username, player.map.map_id, player.map.teams[player.team].objects_list, player.team, lock) # Notify not working properly yet
                     return json.dumps({"Message":[(obj[2].id, obj[2].type, obj[0], obj[1]) for obj in objects_in_radius]})
                 else:
-                    return json.dumps({"Message": f"Player for user '{user.username}' doesn't exist. Please join a map"})
+                    return json.dumps({"Message": f"Player for user doesn't exist. Please join a map"})
 
             elif data['command'] == "newmap":
                 if len(data.items()) != 4:
@@ -238,7 +248,9 @@ class GameServer:
                     my_map = self.map_factory.map_list[map_id]
                     #my_map.initializeObjects()
                     p = my_map.join(user.username, teamname)
-                    if(type(p) == int):
+                    if(p == -1):
+                        return json.dumps({"Message":f"Player is dead. Please join a map."})
+                    elif(type(p) == int):
                         return json.dumps({"Message":f"User {p} already exists in the map."})
                     else:
                         user.player = p

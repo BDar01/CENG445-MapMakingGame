@@ -190,6 +190,14 @@ class GameClient:
         }
 
         return self.execute_command(command)
+    
+    def show_repo(self):
+        command = {
+            'command': "show_repo",
+            'user_id': self.user_id
+        }
+
+        return self.execute_command(command)
 
     def move_player(self, direction):
         command = {

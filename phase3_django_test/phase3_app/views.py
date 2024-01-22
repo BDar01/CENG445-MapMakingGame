@@ -87,6 +87,13 @@ def join_map(request, map_id):
             if form.is_valid():
                 teamname = form.cleaned_data['teamname']
                 message = client.join_map(map_id, teamname)
+                if message["Message"] == "Player is dead. Please join a map.":
+                    response = client.leave_map(map_id, teamname)
+
+                    request.session['leave_map_response'] = message
+
+                    return redirect('main')
+
                 player_name = message["Message"].split(" ")[1]
 
                 # Retrieve the message from the session
@@ -96,7 +103,9 @@ def join_map(request, map_id):
                 
                 querymap_response = client.query_map().get("Message", None)
 
-                return render(request, 'map.html', {'map_id': map_id, 'teamname': teamname, 'playername': player_name, 'background_image': background_image, 'objects': querymap_response, 'msg': msg})
+                repo_response = client.show_repo().get("Message", None)
+
+                return render(request, 'map.html', {'map_id': map_id, 'teamname': teamname, 'playername': player_name, 'background_image': background_image, 'objects': querymap_response, 'repo': repo_response, 'msg': msg})
 
         except Exception as e:
             print(f"Error: {e}")
@@ -116,10 +125,11 @@ def update_map(request):
 
         client = GameClient(request.COOKIES.get('my_game_cookie'))
         querymap_response = client.query_map().get("Message", None)
+        repo_response = client.show_repo().get("Message", None)
             
         # Load the template and render it with the updated data
         template = loader.get_template('map.html')
-        html_content = template.render({'map_id': map_id, 'teamname': teamname, 'playername': playername, 'background_image': background_image, 'objects': querymap_response}, request)
+        html_content = template.render({'map_id': map_id, 'teamname': teamname, 'playername': playername, 'background_image': background_image, 'objects': querymap_response, 'repo': repo_response}, request)
 
         return HttpResponse(html_content)
 
@@ -142,13 +152,15 @@ def drop_object(request):
             drop_response = client.drop_object(object)
             msg = drop_response['Message']
             print("Drop_object response: ", msg)
+
             request.session['msg'] = msg  # Set the message in the session
                 
             querymap_response = client.query_map().get("Message", None)
+            repo_response = client.show_repo().get("Message", None)
 
             # Load the template and render it with the updated data
             template = loader.get_template('map.html')
-            html_content = template.render({'map_id': map_id, 'teamname': teamname, 'playername': playername, 'background_image': background_image, 'objects': querymap_response}, request)
+            html_content = template.render({'map_id': map_id, 'teamname': teamname, 'playername': playername, 'background_image': background_image, 'objects': querymap_response, 'repo': repo_response}, request)
 
             return HttpResponse(html_content)
 
@@ -176,13 +188,15 @@ def move_player(request):
             move_response = client.move_player(direction)
             msg = move_response['Message']
             print("Move_player response: ", msg)
+
             request.session['msg'] = msg  # Set the message in the session
                 
             querymap_response = client.query_map().get("Message", None)
+            repo_response = client.show_repo().get("Message", None)
 
             # Load the template and render it with the updated data
             template = loader.get_template('map.html')
-            html_content = template.render({'map_id': map_id, 'teamname': teamname, 'playername': playername, 'background_image': background_image, 'objects': querymap_response}, request)
+            html_content = template.render({'map_id': map_id, 'teamname': teamname, 'playername': playername, 'background_image': background_image, 'objects': querymap_response, 'repo': repo_response}, request)
 
             return HttpResponse(html_content)
 

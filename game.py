@@ -217,6 +217,9 @@ class Player(Object):
     def stun(self, stun):
         time.sleep(stun)
 
+    def show_repo(self):
+        return self.repo
+
     def drop(self, objecttype):
         flag = False
         available_objects = [obj for obj in self.repo if obj[0] == objecttype]
@@ -229,17 +232,17 @@ class Player(Object):
                             y = tpl[1]
                 if (drop_obj[0] == "Health"):
                     if max(0, x-5) == x-5:
-                        nx = x-5
-                        ny = 0
+                        nx = x-10
+                        ny = y
                     elif max(0, y-5) == y-5:
-                        nx = 0
-                        ny = y-5
+                        nx = x
+                        ny = y-10
                     elif min(self.map.width, x+5) == x+5:
-                        nx = x+5
-                        ny = 0
+                        nx = x+10
+                        ny = y
                     elif min(self.map.height, y+5) == y+5:
-                        nx = 0
-                        ny = y+5
+                        nx = x
+                        ny = y+10
                     self.map.addHealthObject(nx, ny, drop_obj[1], drop_obj[2])
                     #self.map.teams[self.team].addHealthObject(nx, ny, drop_obj[1], drop_obj[2])
                 if (drop_obj[0] == "Mine"):
@@ -256,91 +259,111 @@ class Player(Object):
 
         
         ### MINE OBJECT ###
+
 class Mine(Object):
-    def __init__(self, plyr=None, p = 5, d = 10, k = 1000):
+    def __init__(self, plyr=None, p=5, d=10, k=1000, map=None):
         super().__init__("Mine", "Mine")
         self.prox = p
         self.dmg = d
         self.itr = k
         self.plyr = plyr
+        self.map = map
+        self.map_lock = threading.Lock()  # Lock for protecting access to the map
 
-    def __str__(self):
-        output = "Mine: " + "[Proximity: " + str(self.prox) + ", Damage: " + str(self.dmg) + ", Iteration: " + str(self.itr) + ", Player: " + str(self.plyr) + "]"
-        return output
-
-    def run(self, map):
+    def run(self):
         time.sleep(1)
-        for tpl in map.objects_list:
-            if (tpl[2].id == self.id):
-                x = tpl[0]
-                y = tpl[1]
-        exploded = False
-        for i in range(self.itr):
-            for obj in map.query(x, y, self.prox):
-                if(obj[2].type == "Player" and obj[2].id != self.plyr):
-                    print("Exploded on player id: ", obj[2].id)
-                    obj[2].health -= self.dmg
-                    exploded = True
-            if(exploded):
-                break
-        map.removeObject(self.id)
-            
+        print("Running Mine object:", self.id)
+        with self.map_lock:  # Acquire the lock before accessing the map
+            for tpl in self.map.objects_list:
+                if tpl[2].id == self.id:
+                    x = tpl[0]
+                    y = tpl[1]
+
+            exploded = False
+            for i in range(self.itr):
+                for obj in self.map.query(x, y, self.prox):
+                    if obj[2].type == "Player" and obj[2].id != self.plyr:
+                        print("Exploded on player id:", obj[2].id)
+                        obj[2].health -= self.dmg
+                        if obj[2].health <= 0:
+                            print("Killed player id: ", obj[2].id)
+                        exploded = True
+                if exploded:
+                    break
+
+            self.map.removeObject(self.id)
+            print("Removed Mine object:", self.id)
+
 
         ### FREEZER OBJECT ###
 class Freezer(Object):
-    def __init__(self, plyr=None, p = 5, d = 10, k = 1000):
+    def __init__(self, plyr=None, p = 5, d = 10, k = 1000, map=None):
         super().__init__("Freezer", "Freezer")
         self.prox = p
         self.stun = d
         self.itr = k
         self.plyr = plyr
+        self.map = map
+        self.map_lock = threading.Lock()  # Lock for protecting access to the map
 
     def __str__(self):
         output = "Freezer: " + "[Proximity: " + str(self.prox) + ", Damage: " + str(self.stun) + ", Iteration: " + str(self.itr) + ", Player: " + str(self.plyr) + "]"
         return output
     
-    def run(self, map):
-        time.sleep(0.1)
-        for tpl in map.objects_list: 
-             if (tpl[2].id == self.id):
-                x = tpl[0]
-                y = tpl[1]
-        stunned = False
-        for i in range(self.itr):
-            for obj in map.query(x, y, self.prox):
-                if(obj[2].type == "Player" and obj[2].id != self.plyr):
-                    print("Stunned on player id: ", obj[2].id)
-                    stunned = True
-                    obj[2].stun(self.stun)
-            if(stunned):
-                break
-        map.removeObject(self.id)
+    def run(self):
+        time.sleep(1)
+        print("Running Freezer object: ", self.id)
+        with self.map_lock:
+            for tpl in self.map.objects_list: 
+                if (tpl[2].id == self.id):
+                    x = tpl[0]
+                    y = tpl[1]
+            stunned = False
+            for i in range(self.itr):
+                for obj in self.map.query(x, y, self.prox):
+                    if(obj[2].type == "Player" and obj[2].id != self.plyr):
+                        print("Stunned on player id: ", obj[2].id)
+                        stunned = True
+                        obj[2].stun(self.stun)
+                if(stunned):
+                    break
+            self.map.removeObject(self.id)
+            print("Removed Freezer object: ", self.id)
 
         
         ### HEALTH OBJECT ###
 class Health(Object):
-    def __init__(self, m = 30, inf = True):
+    def __init__(self, m = 30, inf = True, map=None):
         super().__init__("Health", "Health")
         self.health = m
         self.cap = inf
+        self.map = map
+        self.map_lock = threading.Lock()  # Lock for protecting access to the map
 
     def __str__(self):
         output = "Health: " + "[Health Capacity: " + str(self.health) + ", Infinite: " + str(self.cap) + "]"
         return output
     
-    def run(self, map):
-        for tpl in map.objects_list: 
-            if (tpl[2].id == self.id):
-                x = tpl[0]
-                y = tpl[1]
-        cond = True
-        while(cond):
-            for obj in map.query(x, y, 3): 
-                if(obj[2].type == "Player"):
-                    obj[2].health += self.health
-                    if(self.cap == False):
-                        cond = False
-        map.removeObject(self.id)
+    def run(self):
+        print("Running Health object: ", self.id)
+        time.sleep(1)
+        with self.map_lock:
+            for tpl in self.map.objects_list: 
+                if (tpl[2].id == self.id):
+                    x = tpl[0]
+                    y = tpl[1]
+            cond = True
+            while(cond):
+                for obj in self.map.query(x, y, 3): 
+                    if(obj[2].type == "Player" and obj[2].health < 100):
+                        obj[2].health += self.health
+                    elif(obj[2].type == "Player" and obj[2].health > 100):
+                        obj[2].health = 100
+                        print("Healed on player id: ", obj[2].id)
+                        if(self.cap == False):
+                            cond = False
+            self.map.removeObject(self.id)
+            print("Removed Health object: ", self.id)
 
 
         ### MAP ###
@@ -384,11 +407,12 @@ class Map:
         return output
     
     def initializeObjects(self):
-        if (not self.initialized):
+        if not self.initialized:
             for obj in self.objects_list:
                 if(obj[2].__class__.__name__ != 'Player'):
-                    objectThread = threading.Thread(target=obj[2].run, args=(self,))
-                    objectThread.start
+                    obj[2].map = self
+                    objectThread = threading.Thread(target=obj[2].run)
+                    objectThread.start()
             self.initialized = True
 
     def parse_config(self, config):
@@ -412,30 +436,42 @@ class Map:
         if (type == "Health"):
             healthObject = Health()
             self.objects_list.append((x,y,healthObject))
-            healthObject.run(self)
+            healthObject.map = self
+            objectThread = threading.Thread(target=healthObject.run)
+            objectThread.start()
         if (type == "Mine"):
             mineObject = Mine()
             self.objects_list.append((x,y,mineObject))
-            mineObject.run(self)
+            mineObject.map = self
+            objectThread = threading.Thread(target=mineObject.run)
+            objectThread.start()
         if (type == "Freezer"):
             freezerObject = Freezer()
             self.objects_list.append((x,y,freezerObject))
-            freezerObject.run(self)
+            freezerObject.map = self
+            objectThread = threading.Thread(target=freezerObject.run)
+            objectThread.start()            
 
     def addHealthObject(self, x, y, health_val, inf):
         healthObject = Health(health_val, inf)
         self.objects_list.append((x, y, healthObject))
-        healthObject.run(self)
+        healthObject.map = self
+        objectThread = threading.Thread(target=healthObject.run)
+        objectThread.start()
     
     def addMineObject(self, x, y, plyr, p, d, k):
         mineObject = Mine(plyr, p, d, k)
         self.objects_list.append((x, y, mineObject))
-        mineObject.run(self)
+        mineObject.map = self
+        objectThread = threading.Thread(target=mineObject.run)
+        objectThread.start()
 
     def addFreezerObject(self, x, y, plyr, p, s, k):
         freezerObject =  Freezer(plyr, p, s, k)
         self.objects_list.append((x, y, freezerObject))
-        freezerObject.run(self)
+        freezerObject.map = self
+        objectThread = threading.Thread(target=freezerObject.run)
+        objectThread.start()
 
     def addPlayerObject(self, x, y, p):
         self.objects_list.append((x, y, p))
@@ -475,13 +511,17 @@ class Map:
     def join(self, player, team):
         for object in self.objects_list:
             if(object[2].__class__.__name__ == 'Player' and object[2].user == player): #If this function returns none player exists in the map
-                return object[2].id
+                if (object[2].health > 0):
+                    return object[2].id
+                else:
+                    return -1
 
         if (team not in self.teams):  
             team_map = Map(f'{self.name} (Team View {team})', (self.width, self.height), self.config)
             
             team_map.bg_img = np.zeros((self.height,self.width,3), np.uint8)  #Initialize the map as blank image
             team_map.setimage(0, 0, 0, self.getimage(0,0,0))
+            team_map.initializeObjects()
 
             self.teams[team] = team_map
 
