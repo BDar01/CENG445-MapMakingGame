@@ -17,12 +17,12 @@ from django.views.decorators.http import require_POST
 def root_view(request):
     # Set a cookie for every browser session
     if not request.COOKIES.get('my_game_cookie'):
-        cookie_val = secrets.token_hex(16)  # Generate a random hexadecimal string (32 characters)
+        cookie_val = secrets.token_hex(16) 
         response = render(request, 'root.html')
         response.set_cookie('my_game_cookie', cookie_val, max_age=None)  # None means the cookie will expire when the user closes the browser
         return response
 
-    # Retrieve the cookie in the GameClient initialization
+    
     client = GameClient(request.COOKIES.get('my_game_cookie'))
     client.load_token()
 
@@ -105,7 +105,9 @@ def join_map(request, map_id):
 
                 repo_response = client.show_repo().get("Message", None)
 
-                return render(request, 'map.html', {'map_id': map_id, 'teamname': teamname, 'playername': player_name, 'background_image': background_image, 'objects': querymap_response, 'repo': repo_response, 'msg': msg, 'player_vision': player_vision})
+                health_response = client.show_health().get("Message", None)
+
+                return render(request, 'map.html', {'map_id': map_id, 'teamname': teamname, 'playername': player_name, 'background_image': background_image, 'objects': querymap_response, 'repo': repo_response, 'health': health_response, 'msg': msg, 'player_vision': player_vision})
 
         except Exception as e:
             print(f"Error: {e}")
@@ -126,17 +128,17 @@ def update_map(request):
         client = GameClient(request.COOKIES.get('my_game_cookie'))
         querymap_response = client.query_map().get("Message", None)
         repo_response = client.show_repo().get("Message", None)
+        health_response = client.show_health().get("Message", None)
             
         # Load the template and render it with the updated data
         template = loader.get_template('map.html')
-        html_content = template.render({'map_id': map_id, 'teamname': teamname, 'playername': playername, 'background_image': background_image, 'objects': querymap_response, 'repo': repo_response}, request)
+        html_content = template.render({'map_id': map_id, 'teamname': teamname, 'playername': playername, 'background_image': background_image, 'objects': querymap_response, 'repo': repo_response, 'health': health_response}, request)
 
         return HttpResponse(html_content)
 
     except Exception as e:
         print(f"Error: {e}")
         messages.error(request, 'Internal Server Error')
-        # Handle exceptions and return an error response if needed
         return HttpResponseBadRequest(str(e))
     
 def drop_object(request):
@@ -157,17 +159,17 @@ def drop_object(request):
                 
             querymap_response = client.query_map().get("Message", None)
             repo_response = client.show_repo().get("Message", None)
+            health_response = client.show_health().get("Message", None)
 
             # Load the template and render it with the updated data
             template = loader.get_template('map.html')
-            html_content = template.render({'map_id': map_id, 'teamname': teamname, 'playername': playername, 'background_image': background_image, 'objects': querymap_response, 'repo': repo_response}, request)
+            html_content = template.render({'map_id': map_id, 'teamname': teamname, 'playername': playername, 'background_image': background_image, 'objects': querymap_response, 'repo': repo_response, 'health': health_response}, request)
 
             return HttpResponse(html_content)
 
         except Exception as e:
             print(f"Error: {e}")
             messages.error(request, 'Internal Server Error')
-            # Handle exceptions and return an error response if needed
             return HttpResponseBadRequest(str(e))
     else:
         messages.error(request, 'Invalid registration form. Please check your input.')
@@ -193,17 +195,17 @@ def move_player(request):
                 
             querymap_response = client.query_map().get("Message", None)
             repo_response = client.show_repo().get("Message", None)
+            health_response = client.show_health().get("Message", None)
 
             # Load the template and render it with the updated data
             template = loader.get_template('map.html')
-            html_content = template.render({'map_id': map_id, 'teamname': teamname, 'playername': playername, 'background_image': background_image, 'objects': querymap_response, 'repo': repo_response}, request)
+            html_content = template.render({'map_id': map_id, 'teamname': teamname, 'playername': playername, 'background_image': background_image, 'objects': querymap_response, 'repo': repo_response, 'health': health_response}, request)
 
             return HttpResponse(html_content)
 
         except Exception as e:
             print(f"Error: {e}")
             messages.error(request, 'Internal Server Error')
-            # Handle exceptions and return an error response if needed
             return HttpResponseBadRequest(str(e))
     else:
         messages.error(request, 'Invalid registration form. Please check your input.')
@@ -249,13 +251,12 @@ def main_view(request):
 
     return render(request, 'main.html', {'username': client.username, 'new_map_form': new_map_form, 'join_map_form': join_map_form, 'new_map_response': new_map_response, 'leave_map_response': leave_map_response,  'maps': maps})
 
-# Not corrected implementation using GameClient from client.py
+
 def register_user(request):
     if request.method == 'POST':
         form = RegistrationForm(request.POST)
         if form.is_valid():
             # Check if session_key exists or create a new session
-
             try:
                 client = GameClient(request.COOKIES.get('my_game_cookie'))
                 username = form.cleaned_data['username']
@@ -353,7 +354,6 @@ async def exit_on_close(request):
             client = GameClient('localhost', 1423)
             command = {'command': 'E', 'user_id': user_id}
             
-            # Use sync_to_async to make the fetch operation asynchronous
             async_response = await sync_to_async(client.send_command)((json.dumps(command)))
 
             return JsonResponse({'Message': async_response['Message']})

@@ -32,7 +32,7 @@ class GameClient:
             self.connected = False
             self.username = None
             self.load_token()
-            self.cookie_value = cookie_value  # Store the cookie value
+            self.cookie_value = cookie_value  
         
             self.socket_lock = threading.Lock()
             self.notification_thread_flag = threading.Event()
@@ -135,7 +135,7 @@ class GameClient:
 
         if response['Message'] == 'Logged in':
             self.logged_in = True
-            self.user_id = response['user_id']  # Assuming the server sends the user_id upon successful login
+            self.user_id = response['user_id']  
 
         return response
 
@@ -194,6 +194,14 @@ class GameClient:
     def show_repo(self):
         command = {
             'command': "show_repo",
+            'user_id': self.user_id
+        }
+
+        return self.execute_command(command)
+    
+    def show_health(self):
+        command = {
+            'command': "show_health",
             'user_id': self.user_id
         }
 

@@ -94,9 +94,9 @@
 
     <h1>Welcome to map: {{map_id}} & team: {{teamname}}, player no: {{playername}}</h1>
     <h1 id="objects-data">Map Objects: {{objects}}</h1>
-    <text><b> Player Objects: {{repo}}</b> </text><br>
-    <text><b> Commands: </b></text> <button id="leavemap-btn">Leave Map</button> <text> Drop: </text> <button id="dropmine-btn">Mine</button> <button id="dropfrzr-btn">Freezer</button> <button id="drophlth-btn">Health</button><br>
-    <text><b> Messages: </b> {{msg}} </text>
+    <text><b> Player Objects: {{repo}}</b> </text> <br>
+    <text><b> Health: </b>{{health}}</text> <text><b> Messages: </b> {{msg}} </text><br>
+    <text><b> Commands: </b></text> <button id="leavemap-btn">Leave Map</button> <text> Drop: </text> <button id="dropmine-btn">Mine</button> <button id="dropfrzr-btn">Freezer</button> <button id="drophlth-btn">Health</button>
     <div id="map-svg-container">
         <svg id="map-svg">
         {% for obj in objects %}
@@ -152,7 +152,7 @@
 
                 var left = x - "{{player_vision}}" / 2
                 var top = y - "{{player_vision}}" / 2
-                /*var my_top = myList[i][3] - "{{player_vision}}"*/
+                
                 my_top = 200
                 $("#item-svg-container" + k).css({
                     "position": "absolute",
@@ -166,7 +166,6 @@
         }
                 
 
-        // Update transform property for text and circle elements
         $("#map-svg text, #map-svg circle").each(function() {
             var x = parseFloat($(this).attr("x")) * 0.5;
             var y = parseFloat($(this).attr("y")) * 0.5;
@@ -202,10 +201,10 @@
         $.ajax({
             url: "{% url 'drop_object' %}?map_id=" + mapId + "&teamname=" + teamName + "&playername=" + playerName + "&background_image={{background_image}}" + "&object=" + "Mine",
             type: 'GET',
-            dataType: 'html',  // Expect HTML response
+            dataType: 'html',  
             success: function(data) {
                 console.log("Value of msg:", "{{ msg }}");
-                // On success, update the entire HTML content with the new data
+                
                 window.location.reload()
             },
             error: function(error) {
@@ -218,10 +217,10 @@
         $.ajax({
             url: "{% url 'drop_object' %}?map_id=" + mapId + "&teamname=" + teamName + "&playername=" + playerName + "&background_image={{background_image}}" + "&object=" + "Freezer",
             type: 'GET',
-            dataType: 'html',  // Expect HTML response
+            dataType: 'html',  
             success: function(data) {
                 console.log("Value of msg:", "{{ msg }}");
-                // On success, update the entire HTML content with the new data
+                
                 window.location.reload()
             },
             error: function(error) {
@@ -234,10 +233,10 @@
         $.ajax({
             url: "{% url 'drop_object' %}?map_id=" + mapId + "&teamname=" + teamName + "&playername=" + playerName + "&background_image={{background_image}}" + "&object=" + "Health",
             type: 'GET',
-            dataType: 'html',  // Expect HTML response
+            dataType: 'html',  
             success: function(data) {
                 console.log("Value of msg:", "{{ msg }}");
-                // On success, update the entire HTML content with the new data
+                
                 window.location.reload()
             },
             error: function(error) {
@@ -250,10 +249,10 @@
         $.ajax({
             url: "{% url 'move_player' %}?map_id=" + mapId + "&teamname=" + teamName + "&playername=" + playerName + "&background_image={{background_image}}" + "&direction=" + direction,
             type: 'GET',
-            dataType: 'html',  // Expect HTML response
+            dataType: 'html',  
             success: function(data) {
                 console.log("Received data:", data);
-                // On success, update the entire HTML content with the new data
+                
                 window.location.reload()
             },
             error: function(error) {
@@ -266,9 +265,9 @@
         $.ajax({
             url: "{% url 'update_map' %}?map_id=" + mapId + "&teamname=" + teamName + "&playername=" + playerName + "&background_image={{background_image}}",
             type: 'GET',
-            dataType: 'html',  // Expect HTML response
+            dataType: 'html',  
             success: function(data) {
-                // Reload the entire page with the updated content
+                
                 window.location.reload();
             },
             error: function(error) {
@@ -277,22 +276,21 @@
         });
     }
 
-    // Set an interval to periodically call the updateMapContent function (every 5 seconds in this example)
+    // Set an interval to periodically call the updateMapContent function to refresh webpage
     setInterval(updateMapContent, 5000);
 
-    // Capture arrow key events
     $(document).keydown(function(e) {
         switch (e.which) {
-            case 37: // Left arrow key
+            case 37: // Left arrow 
                 movePlayer('W');
                 break;
-            case 38: // Up arrow key
+            case 38: // Up arrow 
                 movePlayer('S');
                 break;
-            case 39: // Right arrow key
+            case 39: // Right arrow 
                 movePlayer('E');
                 break;
-            case 40: // Down arrow key
+            case 40: // Down arrow 
                 movePlayer('N');
                 break;
             default:

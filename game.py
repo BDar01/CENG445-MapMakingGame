@@ -194,32 +194,12 @@ class Player(Object):
     def query(self, x, y, r):
         objects_list = self.map.query(x, y, r, self.team)
         return objects_list
-    
-        new_objects_list = []
-        flag = True
-
-        for o1 in objects_list:
-            for o2 in self.map.teams[self.team].objects_list:
-                if (o1[2].id == o2[2].id and o1[2].type == o2[2].type): 
-                    flag = False
-            if (flag):
-                new_objects_list.append(o1)
-            flag = True
-        
-        for o in new_objects_list:
-            self.map.teams[self.team].objects_list.append(o)
-
-        return self.map.teams[self.team].objects_list
-
-
-    def competition(self):   #Will be implemented in next phases.
-        return
 
     def stun(self, stun):
         time.sleep(stun)
 
     def show_repo(self):
-        return self.repo
+        return [obj[0] for obj in self.repo]
 
     def drop(self, objecttype):
         flag = False
@@ -245,13 +225,13 @@ class Player(Object):
                         nx = x
                         ny = y+10
                     self.map.addHealthObject(nx, ny, drop_obj[1], drop_obj[2])
-                    #self.map.teams[self.team].addHealthObject(nx, ny, drop_obj[1], drop_obj[2])
+                    
                 if (drop_obj[0] == "Mine"):
                     self.map.addMineObject(x, y, self.id, drop_obj[1], drop_obj[2], drop_obj[3])
-                    #self.map.teams[self.team].addMineObject(x, y, self.id, drop_obj[1], drop_obj[2], drop_obj[3])
+                    
                 if (drop_obj[0] == "Freezer"):
                     self.map.addFreezerObject(x, y, self.id, drop_obj[1], drop_obj[2], drop_obj[3])
-                    #self.map.teams[self.team].addFreezerObject(x, y, self.id, drop_obj[1], drop_obj[2], drop_obj[3])
+                    
             
                 self.repo.remove(drop_obj)
                 flag = True
@@ -274,7 +254,7 @@ class Mine(Object):
     def run(self):
         time.sleep(1)
         print("Running Mine object:", self.id)
-        with self.map_lock:  # Acquire the lock before accessing the map
+        with self.map_lock:  
             for tpl in self.map.objects_list:
                 if tpl[2].id == self.id:
                     x = tpl[0]
@@ -541,7 +521,7 @@ class Map:
 
         p = Player(player, team, self.player_health, self.player_repo[:], self)
         self.objects_list.append((random.randint(0, self.height), random.randint(0, self.height), p))
-        #self.teammap(team).addPlayerObject(0, 0, p)
+        
         return p
 
     def leave(self, player, team):

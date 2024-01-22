@@ -16,18 +16,16 @@
     </body>
 </html>
 
-<script>
-    // Get references to the buttons
+<script>    
     var registerButton = document.getElementById("register-btn");
     var loginButton = document.getElementById("login-btn");
 
-    // Add click event listeners
     registerButton.addEventListener("click", function() {
-        window.location.href = "{% url 'register' %}"; // Replace 'register' with your actual URL
+        window.location.href = "{% url 'register' %}"; 
     });
 
     loginButton.addEventListener("click", function() {
-        window.location.href = "{% url 'login' %}"; // Replace 'login' with your actual URL
+        window.location.href = "{% url 'login' %}"; 
     });
 </script>
 {% endblock %}

@@ -194,6 +194,16 @@ class GameServer:
                         return json.dumps({"Message": f"Player {player.id} has no more {object_type}s"})
                 else:
                     return json.dumps({"Message": f"Player for user doesn't exist. Please join a map"})
+                
+            elif data['command'] == "show_health":
+                user_id = data['user_id']
+                user = self.user_factory.user_list[user_id]
+                if user.player:
+                    player = user.player
+                    health = player.health
+                    return json.dumps({"Message":health})
+                else:
+                    return json.dumps({"Message": f"Player for user doesn't exist. Please join a map"})
             
             elif data['command'] == "show_repo":
                 user_id = data['user_id']
@@ -246,7 +256,6 @@ class GameServer:
                 user = self.user_factory.user_list[user_id]
                 if map_id in list(self.map_factory.map_list.keys()):
                     my_map = self.map_factory.map_list[map_id]
-                    #my_map.initializeObjects()
                     p = my_map.join(user.username, teamname)
                     if(p == -1):
                         return json.dumps({"Message":f"Player is dead. Please join a map."})
