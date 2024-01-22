@@ -194,6 +194,9 @@ class Player(Object):
     def query(self, x, y, r):
         objects_list = self.map.query(x, y, r, self.team)
         return objects_list
+    
+    def competition(self):
+        pass
 
     def stun(self, stun):
         time.sleep(stun)
