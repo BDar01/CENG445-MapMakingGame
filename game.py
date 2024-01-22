@@ -520,7 +520,7 @@ class Map:
                         if i not in new_objects_list:
                             new_objects_list.append(i)
 
-            return new_objects_list
+        return new_objects_list
     
     def join(self, player, team):
         for object in self.objects_list:

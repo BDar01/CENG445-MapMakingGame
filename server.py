@@ -255,7 +255,7 @@ class GameServer:
                     else:
                         user.player = p
                         player = user.player
-                        self.send_notification(user.username, map_id, player.map.teams[player.team].objects_list, player.team, lock) # Notify not working properly yet
+                        #self.send_notification(user.username, map_id, player.map.teams[player.team].objects_list, player.team, lock) # Notify not working properly yet
                         return json.dumps({"Message": f"Player '{player.id}' (Team member of {teamname}) joined to '{my_map.name}'."})
 
                 else:
