@@ -33,6 +33,7 @@
                         {% csrf_token %}
                         {{ join_map_form.as_p }}
                         <input type="hidden" name="background_image" value="{{ map.map_config.image }}">
+                        <input type="hidden" name="player_vision" value="{{ map.map_config.playervision}}">
                         <button type="submit">Join Map</button>
                     </form>
                 </div>

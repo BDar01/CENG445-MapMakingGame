@@ -4,6 +4,7 @@ import time
 import hashlib
 import uuid
 import threading
+import random
 
 
 
@@ -191,7 +192,7 @@ class Player(Object):
             self.map.leave(self.user, self.team)
 
     def query(self, x, y, r):
-        objects_list = self.map.query(x, y, r)
+        objects_list = self.map.query(x, y, r, self.team)
         return objects_list
     
         new_objects_list = []
@@ -500,12 +501,22 @@ class Map:
             return
         self.bg_img[max(0, y - r):min(self.height, y + r), max(0, x - r):min(self.width, x + r)] = image
     
-    def query(self, x, y, r):
+    def query(self, x, y, r, team):
         if(r == 0):
            r = self.player_vision
 
         
-        new_objects_list = [obj for obj in self.objects_list if (max(0, x-r) <= obj[0] <= min(x+r,self.width) and (max(0,y-r) <= obj[1] <= min(self.height,y+r)))]
+
+
+        new_objects_list = []
+        for object in self.objects_list:
+            if (isinstance(object[2], Player) and object[2].team == team):
+                x, y = object[2].getPositionOfPlayer()
+                list1 = [obj for obj in self.objects_list if (max(0, x-r) <= obj[0] <= min(x+r,self.width) and (max(0,y-r) <= obj[1] <= min(self.height,y+r)))]
+                for i in list1:
+                    if i not in new_objects_list:
+                        new_objects_list.append(i)
+
         return new_objects_list
     
     def join(self, player, team):
@@ -526,7 +537,7 @@ class Map:
             self.teams[team] = team_map
 
         p = Player(player, team, self.player_health, self.player_repo[:], self)
-        self.objects_list.append((self.height/2, self.width/2, p))
+        self.objects_list.append((random.randint(0, self.height), random.randint(0, self.height), p))
         #self.teammap(team).addPlayerObject(0, 0, p)
         return p
 

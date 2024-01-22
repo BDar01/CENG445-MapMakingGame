@@ -63,7 +63,6 @@ def new_map(request):
 
                 response = client.new_map(name, size, type)
                 request.session['new_map_response'] = response
-
                 return redirect('main')
 
 
@@ -81,6 +80,7 @@ def join_map(request, map_id):
     if request.method == 'POST':
         form = JoinMapForm(request.POST)
         background_image = request.POST.get('background_image', '')
+        player_vision = request.POST.get('player_vision','')
         try: 
             client = GameClient(request.COOKIES.get('my_game_cookie'))
 
@@ -105,7 +105,7 @@ def join_map(request, map_id):
 
                 repo_response = client.show_repo().get("Message", None)
 
-                return render(request, 'map.html', {'map_id': map_id, 'teamname': teamname, 'playername': player_name, 'background_image': background_image, 'objects': querymap_response, 'repo': repo_response, 'msg': msg})
+                return render(request, 'map.html', {'map_id': map_id, 'teamname': teamname, 'playername': player_name, 'background_image': background_image, 'objects': querymap_response, 'repo': repo_response, 'msg': msg, 'player_vision': player_vision})
 
         except Exception as e:
             print(f"Error: {e}")

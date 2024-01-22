@@ -37,6 +37,7 @@
             height: 408px;
 
             /* Position the container relatively */
+            /* color: black;  */
             position: relative;
 
             /* Ensure the container covers the entire viewport */
@@ -75,12 +76,22 @@
         }
 
         #map-svg text {
-            font-size: 16px; /* Set the desired font size for text elements */
+            font-size: 12px; /* Set the desired font size for text elements */
         }
+
+        .vanish {
+            display: none
+        }
+
+        .show {
+            display: inline
+        }
+        
     </style>       
 </head>
 
 <body>
+
     <h1>Welcome to map: {{map_id}} & team: {{teamname}}, player no: {{playername}}</h1>
     <h1 id="objects-data">Map Objects: {{objects}}</h1>
     <text><b> Player Objects: {{repo}}</b> </text><br>
@@ -88,11 +99,18 @@
     <text><b> Messages: </b> {{msg}} </text>
     <div id="map-svg-container">
         <svg id="map-svg">
-            {% for obj in objects %}
-            <text x="{{ obj.2 }}" y="{{ obj.3 }}" fill="red">{{ obj.1 }} {{obj.0}}</text>
-            <circle cx="{{ obj.2 }}" cy="{{ obj.3 }}" r="5" fill="red"/>
-            {% endfor %}
+        {% for obj in objects %}
+            <text id="object-text{{ forloop.counter }}" x="{{ obj.2|add:'-30' }}" y="{{ obj.3|add:'-15' }}" fill="red">{{ obj.1 }} {{obj.0}}</text>
+            <circle  id="object-circle{{ forloop.counter }}" cx="{{ obj.2 }}" cy="{{ obj.3 }}" r="5" fill="red"/>         
+        {% endfor %}
         </svg>
+        {% for obj in objects %}
+
+        <div id = "item-svg-container{{ forloop.counter }}" class = "{% if obj.1 != 'Player' %}vanish{% else %}inline{% endif %}">
+        </div>
+
+        {% endfor %}
+        
     </div>
 </body>
 </html>
@@ -109,25 +127,63 @@
                 "width": "650px",
                 "height": "490px"
             });
-
-            // Update transform property for text and circle elements
-            $("#map-svg text, #map-svg circle").each(function() {
-                var x = parseFloat($(this).attr("x")) * 0.5;
-                var y = parseFloat($(this).attr("y")) * 0.5;
-                var cx = parseFloat($(this).attr("cx")) * 0.5;
-                var cy = parseFloat($(this).attr("cy")) * 0.5;
-
-                $(this).attr("x", x);
-                $(this).attr("y", y);
-                $(this).attr("cx", cx);
-                $(this).attr("cy", cy);
-            });
-
-            $("#map-svg").css({
-                "width": "100%",
-                "height": "100%"
-            });
         }
+            
+
+        var objects = "{{objects}}"
+        myList = objects.split("], ")
+
+        for(i = 0; i < myList.length; i++) {
+            myList[i] =  myList[i].replaceAll("[[", "")
+            myList[i] = myList[i].replaceAll("[", "")
+            myList[i] = myList[i].replaceAll("]]","")
+            myList[i] = myList[i].replaceAll("&#x27;", "")
+            myList[i] = myList[i].split(", ")
+
+        }
+
+            
+            
+        for (i = 0; i < myList.length; i++) {
+            if (myList[i][1] == 'Player') {
+                var k = i + 1
+                var x = parseFloat($("#object-circle" + k).attr("cx")) * 0.5;
+                var y = parseFloat($("#object-circle" + k).attr("cy")) * 0.5;
+
+                var left = x - "{{player_vision}}" / 2
+                var top = y - "{{player_vision}}" / 2
+                /*var my_top = myList[i][3] - "{{player_vision}}"*/
+                my_top = 200
+                $("#item-svg-container" + k).css({
+                    "position": "absolute",
+                    "left": left + "px",
+                    "top": top + "px",
+                    "width": "{{player_vision}}" + "px",
+                    "height": "{{player_vision}}" + "px",
+                    "box-shadow": "0 0 0 99999px rgba(0, 0, 0, 0.75)"
+                });
+            }
+        }
+                
+
+        // Update transform property for text and circle elements
+        $("#map-svg text, #map-svg circle").each(function() {
+            var x = parseFloat($(this).attr("x")) * 0.5;
+            var y = parseFloat($(this).attr("y")) * 0.5;
+            var cx = parseFloat($(this).attr("cx")) * 0.5;
+            var cy = parseFloat($(this).attr("cy")) * 0.5;
+
+
+            $(this).attr("x", x);
+            $(this).attr("y", y);
+            $(this).attr("cx", cx);
+            $(this).attr("cy", cy);
+        });
+
+        $("#map-svg").css({
+            "width": "100%",
+            "height": "100%"
+        });
     });
 
     var leaveMapButton = document.getElementById("leavemap-btn")
