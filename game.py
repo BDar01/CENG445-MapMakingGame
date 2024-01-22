@@ -282,7 +282,7 @@ class Mine(Object):
 
             exploded = False
             for i in range(self.itr):
-                for obj in self.map.query(x, y, self.prox):
+                for obj in self.map.query(x, y, self.prox, ""):
                     if obj[2].type == "Player" and obj[2].id != self.plyr:
                         print("Exploded on player id:", obj[2].id)
                         obj[2].health -= self.dmg
@@ -321,7 +321,7 @@ class Freezer(Object):
                     y = tpl[1]
             stunned = False
             for i in range(self.itr):
-                for obj in self.map.query(x, y, self.prox):
+                for obj in self.map.query(x, y, self.prox,""):
                     if(obj[2].type == "Player" and obj[2].id != self.plyr):
                         print("Stunned on player id: ", obj[2].id)
                         stunned = True
@@ -355,7 +355,7 @@ class Health(Object):
                     y = tpl[1]
             cond = True
             while(cond):
-                for obj in self.map.query(x, y, 3): 
+                for obj in self.map.query(x, y, 3, ""): 
                     if(obj[2].type == "Player" and obj[2].health < 100):
                         obj[2].health += self.health
                     elif(obj[2].type == "Player" and obj[2].health > 100):
@@ -505,19 +505,22 @@ class Map:
         if(r == 0):
            r = self.player_vision
 
-        
 
+        if team == "":
+            new_objects_list = [obj for obj in self.objects_list if (max(0, x-r) <= obj[0] <= min(x+r,self.width) and (max(0,y-r) <= obj[1] <= min(self.height,y+r)))]
 
-        new_objects_list = []
-        for object in self.objects_list:
-            if (isinstance(object[2], Player) and object[2].team == team):
-                x, y = object[2].getPositionOfPlayer()
-                list1 = [obj for obj in self.objects_list if (max(0, x-r) <= obj[0] <= min(x+r,self.width) and (max(0,y-r) <= obj[1] <= min(self.height,y+r)))]
-                for i in list1:
-                    if i not in new_objects_list:
-                        new_objects_list.append(i)
+        else:
+            new_objects_list = []
 
-        return new_objects_list
+            for object in self.objects_list:
+                if (isinstance(object[2], Player) and object[2].team == team):
+                    x, y = object[2].getPositionOfPlayer()
+                    list1 = [obj for obj in self.objects_list if (max(0, x-r) <= obj[0] <= min(x+r,self.width) and (max(0,y-r) <= obj[1] <= min(self.height,y+r)))]
+                    for i in list1:
+                        if i not in new_objects_list:
+                            new_objects_list.append(i)
+
+            return new_objects_list
     
     def join(self, player, team):
         for object in self.objects_list:
