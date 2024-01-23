@@ -257,6 +257,7 @@ class Mine(Object):
     def run(self):
         time.sleep(1)
         print("Running Mine object:", self.id)
+        x, y = 0, 0
         with self.map_lock:  
             for tpl in self.map.objects_list:
                 if tpl[2].id == self.id:
@@ -297,6 +298,7 @@ class Freezer(Object):
     def run(self):
         time.sleep(1)
         print("Running Freezer object: ", self.id)
+        x, y = 0, 0
         with self.map_lock:
             for tpl in self.map.objects_list: 
                 if (tpl[2].id == self.id):
@@ -331,6 +333,7 @@ class Health(Object):
     def run(self):
         print("Running Health object: ", self.id)
         time.sleep(1)
+        x, y = 0, 0
         with self.map_lock:
             for tpl in self.map.objects_list: 
                 if (tpl[2].id == self.id):
