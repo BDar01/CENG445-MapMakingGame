@@ -245,13 +245,14 @@ class Player(Object):
         ### MINE OBJECT ###
 
 class Mine(Object):
-    def __init__(self, plyr=None, p=5, d=10, k=1000, map=None):
+    def __init__(self, plyr=None, p=5, d=10, k=1000, map=None, check=False):
         super().__init__("Mine", "Mine")
         self.prox = p
         self.dmg = d
         self.itr = k
         self.plyr = plyr
         self.map = map
+        self.check = check
         self.map_lock = threading.Lock()  # Lock for protecting access to the map
 
     def run(self):
@@ -282,13 +283,14 @@ class Mine(Object):
 
         ### FREEZER OBJECT ###
 class Freezer(Object):
-    def __init__(self, plyr=None, p = 5, d = 10, k = 1000, map=None):
+    def __init__(self, plyr=None, p = 5, d = 10, k = 1000, map=None, check=False):
         super().__init__("Freezer", "Freezer")
         self.prox = p
         self.stun = d
         self.itr = k
         self.plyr = plyr
         self.map = map
+        self.check=check
         self.map_lock = threading.Lock()  # Lock for protecting access to the map
 
     def __str__(self):
@@ -319,11 +321,12 @@ class Freezer(Object):
         
         ### HEALTH OBJECT ###
 class Health(Object):
-    def __init__(self, m = 30, inf = True, map=None):
+    def __init__(self, m = 30, inf = True, map=None, check=False):
         super().__init__("Health", "Health")
         self.health = m
         self.cap = inf
         self.map = map
+        self.check = check
         self.map_lock = threading.Lock()  # Lock for protecting access to the map
 
     def __str__(self):
@@ -505,6 +508,9 @@ class Map:
                     for i in list1:
                         if i not in new_objects_list:
                             new_objects_list.append(i)
+                elif (not isinstance(object[2], Player) and object[2].check):
+                    if object not in new_objects_list:
+                        new_objects_list.append(object)
 
         return new_objects_list
     
